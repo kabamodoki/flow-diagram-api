@@ -1,0 +1,36 @@
+{
+  "title": "サンプル1（ボタン型）",
+  "states": [
+    {
+      "label": "ステータスA",
+      "kind": "status",
+      "actions": [
+        { "type": "button", "label": "ボタン1", "next": "ステータスB" },
+        { "type": "button", "label": "ボタン2", "next": "ステータスE" },
+        { "type": "button", "label": "ボタン3", "next": "ステータスF" },
+        { "type": "button", "label": "ボタン4", "next": "ステータスG" }
+      ]
+    },
+    {
+      "label": "ステータスB",
+      "kind": "status",
+      "actions": [
+        { "type": "button", "label": "次へ", "next": "ステータスC" },
+        { "type": "button", "label": "Aに戻る", "next": "ステータスA" }
+      ]
+    },
+    {
+      "label": "ステータスC",
+      "kind": "status",
+      "actions": [
+        { "type": "button", "label": "次へ", "next": "ステータスD" },
+        { "type": "button", "label": "Aに戻る", "next": "ステータスA" }
+      ]
+    },
+    { "label": "ステータスD", "kind": "procedure" },
+    { "label": "ステータスE", "kind": "status" },
+    { "label": "ステータスF", "kind": "status" },
+    { "label": "ステータスG", "kind": "status" },
+    { "label": "ステータスZ", "kind": "status" }
+  ]
+}

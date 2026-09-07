@@ -128,7 +128,7 @@ class LayoutEngineTest {
         Layout.NodeBox original = l.nodes.stream().filter(n -> !n.clone).findFirst().orElseThrow();
         assertEquals("a", clone.state.label);
         assertEquals(original.column + 1, clone.column, "複製は起点の右隣の列に置く");
-        assertEquals(theme.headerHeight, clone.height, "複製は常に終端＝ヘッダのみの高さ");
+        assertEquals(LayoutEngine.CLONE_TEXT_HEIGHT, clone.height, "複製はテキスト表示のみの高さ");
     }
 
     @Test
@@ -155,7 +155,7 @@ class LayoutEngineTest {
                 state("b", go("back", "a"))));
         Layout.NodeBox cloneA = l.nodes.stream()
                 .filter(n -> n.clone && n.state.label.equals("a")).findFirst().orElseThrow();
-        assertEquals(theme.headerHeight, cloneA.height, "複製は元のアクション数に関わらずヘッダのみ");
+        assertEquals(LayoutEngine.CLONE_TEXT_HEIGHT, cloneA.height, "複製は元のアクション数に関わらずテキスト高さのみ");
     }
 
     @Test

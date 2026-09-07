@@ -46,6 +46,16 @@ public class DiagramController {
         return sampleSpec();
     }
 
+    @GetMapping(path = "/api/sample/1", produces = MediaType.APPLICATION_JSON_VALUE)
+    public FlowSpec sample1() {
+        return sampleSpec();
+    }
+
+    @GetMapping(path = "/api/sample/2", produces = MediaType.APPLICATION_JSON_VALUE)
+    public FlowSpec sample2() {
+        return sample2Spec();
+    }
+
     // --- 内部 ---
 
     private record Rendered(String css, String canvas, HtmlPageWriter writer) {
@@ -62,38 +72,62 @@ public class DiagramController {
 
     static FlowSpec sampleSpec() {
         FlowSpec spec = new FlowSpec();
-        spec.title = "申請ワークフロー";
+        spec.title = "サンプル1（ボタン型）";
 
-        StateSpec draft = new StateSpec("未申請");
-        draft.kind = StateSpec.KIND_STATUS;
-        draft.actions = List.of(
-                action("button", "申請する", "審査中"),
-                action("button", "一時保存", null),
-                action("button", "コピーを作成", "未申請"),
-                action("button", "破棄", "破棄"));
+        StateSpec a = new StateSpec("ステータスA");
+        a.kind = StateSpec.KIND_STATUS;
+        a.actions = List.of(
+                action("button", "ボタン1", "ステータスB"),
+                action("button", "ボタン2", "ステータスE"),
+                action("button", "ボタン3", "ステータスF"),
+                action("button", "ボタン4", "ステータスG"));
 
-        StateSpec review = new StateSpec("審査中");
-        review.kind = StateSpec.KIND_PROCEDURE;
-        review.actions = List.of(
-                action("button", "承認", "承認済み"),
-                action("button", "差戻し", "未申請"),
-                action("flow", "タイムアウト", "失効"));
+        StateSpec b = new StateSpec("ステータスB");
+        b.kind = StateSpec.KIND_STATUS;
+        b.actions = List.of(
+                action("button", "次へ", "ステータスC"),
+                action("button", "Aに戻る", "ステータスA"));
 
-        StateSpec approved = new StateSpec("承認済み");
-        approved.kind = StateSpec.KIND_STATUS;
-        approved.actions = List.of(
-                action("flow", "後続手続きへ連携", "外部手続きへ引継ぎ"));
+        StateSpec c = new StateSpec("ステータスC");
+        c.kind = StateSpec.KIND_STATUS;
+        c.actions = List.of(
+                action("button", "次へ", "ステータスD"),
+                action("button", "Aに戻る", "ステータスA"));
 
-        StateSpec handoff = new StateSpec("外部手続きへ引継ぎ");
-        handoff.kind = StateSpec.KIND_PROCEDURE;
+        StateSpec d = new StateSpec("ステータスD"); d.kind = StateSpec.KIND_PROCEDURE;
+        StateSpec e = new StateSpec("ステータスE"); e.kind = StateSpec.KIND_STATUS;
+        StateSpec f = new StateSpec("ステータスF"); f.kind = StateSpec.KIND_STATUS;
+        StateSpec g = new StateSpec("ステータスG"); g.kind = StateSpec.KIND_STATUS;
+        StateSpec z = new StateSpec("ステータスZ"); z.kind = StateSpec.KIND_STATUS;
 
-        StateSpec expired = new StateSpec("失効");
-        expired.kind = StateSpec.KIND_STATUS;
+        spec.states = List.of(a, b, c, d, e, f, g, z);
+        return spec;
+    }
 
-        StateSpec discarded = new StateSpec("破棄");
-        discarded.kind = StateSpec.KIND_STATUS;
+    static FlowSpec sample2Spec() {
+        FlowSpec spec = new FlowSpec();
+        spec.title = "サンプル2（フロー型）";
 
-        spec.states = List.of(draft, review, approved, handoff, expired, discarded);
+        StateSpec a = new StateSpec("手続きA");
+        a.kind = StateSpec.KIND_PROCEDURE;
+        a.actions = List.of(action("flow", "フロー1", "手続きB"));
+
+        StateSpec b = new StateSpec("手続きB");
+        b.kind = StateSpec.KIND_PROCEDURE;
+        b.actions = List.of(action("flow", "フロー2", "手続きC"));
+
+        StateSpec c = new StateSpec("手続きC");
+        c.kind = StateSpec.KIND_PROCEDURE;
+        c.actions = List.of(
+                action("flow", "フロー3", "手続きD"),
+                action("flow", "フロー4", null),
+                action("flow", "フロー5", null),
+                action("flow", "フロー6", null),
+                action("flow", "フロー7", null));
+
+        StateSpec d = new StateSpec("手続きD"); d.kind = StateSpec.KIND_PROCEDURE;
+
+        spec.states = List.of(a, b, c, d);
         return spec;
     }
 

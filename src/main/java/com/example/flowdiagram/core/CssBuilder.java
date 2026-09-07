@@ -57,10 +57,13 @@ public class CssBuilder {
                 .fd-canvas .node{position:absolute;z-index:2;border-radius:10px;\
                 box-shadow:var(--node-shadow);overflow:hidden;border:1.5px solid transparent;\
                 transition:outline-color .15s;outline:3px solid transparent;outline-offset:3px;}
-                /* 複製ボックス（後退辺・自己ループの終端）にカーソルを合わせると、
-                   自分自身と対応する元のボックスの両方を薄い青のアウトラインで強調する。
-                   JS 不使用・純粋な CSS（:hover と :has()）のみで実現する */
-                .fd-canvas .node[data-clone="true"]:hover{outline-color:var(--edge-color);}
+                /* --- 複製参照テキスト（後退辺・自己ループの終端） --- */
+                .fd-canvas .node-clone-ref{position:absolute;z-index:2;display:flex;\
+                align-items:center;gap:4px;font-size:var(--state-font-size);color:#6b7280;\
+                font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
+                text-overflow:ellipsis;padding:0 6px;}
+                .fd-canvas .node-clone-ref::before{content:"↩";font-style:normal;flex-shrink:0;}
+                .fd-canvas .node-clone-ref:hover{color:var(--edge-color);}
                 .fd-canvas .node-header{min-height:var(--header-height);display:flex;\
                 flex-direction:column;justify-content:center;gap:2px;padding:6px 12px;}
                 .fd-canvas .kind-badge,.fd-canvas .unconnected-badge{align-self:flex-start;\

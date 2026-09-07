@@ -1,0 +1,31 @@
+{
+  "title": "サンプル2（フロー型）",
+  "states": [
+    {
+      "label": "手続きA",
+      "kind": "procedure",
+      "actions": [
+        { "type": "flow", "label": "フロー1", "next": "手続きB" }
+      ]
+    },
+    {
+      "label": "手続きB",
+      "kind": "procedure",
+      "actions": [
+        { "type": "flow", "label": "フロー2", "next": "手続きC" }
+      ]
+    },
+    {
+      "label": "手続きC",
+      "kind": "procedure",
+      "actions": [
+        { "type": "flow", "label": "フロー3", "next": "手続きD" },
+        { "type": "flow", "label": "フロー4" },
+        { "type": "flow", "label": "フロー5" },
+        { "type": "flow", "label": "フロー6" },
+        { "type": "flow", "label": "フロー7" }
+      ]
+    },
+    { "label": "手続きD", "kind": "procedure" }
+  ]
+}

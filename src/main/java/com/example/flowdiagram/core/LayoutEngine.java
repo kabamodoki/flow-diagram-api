@@ -86,7 +86,7 @@ public class LayoutEngine {
                     layout.nodes.add(to);
                 }
 
-                int ty = to.y + theme.headerHeight / 2;
+                int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + theme.headerHeight / 2;
                 Layout.EdgeRoute e = new Layout.EdgeRoute();
                 e.fromStateLabel = s.label;
                 routeForward(e, sx, sy, to.x, ty, lane, edgeCount);
@@ -116,7 +116,7 @@ public class LayoutEngine {
         box.state = target;
         box.column = column;
         box.width = theme.nodeWidth;
-        box.height = nodeHeight(0); // 複製は常に終端＝アクション無しの高さ
+        box.height = CLONE_TEXT_HEIGHT; // テキスト表示のみ
         box.clone = true;
         placeInColumn(box, nextYByColumn, topY);
         return box;
@@ -295,6 +295,7 @@ public class LayoutEngine {
     }
 
     private static final int EDGE_LANE_STEP = 16;
+    public static final int CLONE_TEXT_HEIGHT = 28;
 
     private void routeForward(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int lane, int laneCount) {
         if (sy == ty) {

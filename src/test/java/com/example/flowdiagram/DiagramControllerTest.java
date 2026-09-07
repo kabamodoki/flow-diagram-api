@@ -66,15 +66,15 @@ class DiagramControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(backEdgeJson))
                 .andExpect(status().isOk())
                 .andReturn();
-        assertTrue(body(page).contains("data-clone"));
-        assertTrue(body(page).contains(":has(~ .node.lbl-"), "CSSの:has()による強調ルールが出ること");
+        assertTrue(body(page).contains("node-clone-ref"));
+        assertTrue(body(page).contains(":has(~ .node-clone-ref.lbl-"), "CSSの:has()による強調ルールが出ること");
         assertFalse(body(page).contains("scrollIntoView"), "旧クリックジャンプ用JSは廃止済みであること");
 
         MvcResult fragment = mvc.perform(post("/api/diagram/fragment")
                         .contentType(MediaType.APPLICATION_JSON).content(backEdgeJson))
                 .andExpect(status().isOk())
                 .andReturn();
-        assertTrue(body(fragment).contains(":has(~ .node.lbl-"), "fragment でも同じCSSが出ること（JS不要のため）");
+        assertTrue(body(fragment).contains(":has(~ .node-clone-ref.lbl-"), "fragment でも同じCSSが出ること（JS不要のため）");
     }
 
     @Test

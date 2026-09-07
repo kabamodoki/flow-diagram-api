@@ -64,8 +64,8 @@ public class HtmlDiagramRenderer {
         sb.append("  <style>\n");
         for (String token : labelsWithClone) {
             sb.append("    .fd-canvas .node.lbl-").append(token)
-              .append(":not([data-clone=\"true\"]):has(~ .node.lbl-").append(token)
-              .append("[data-clone=\"true\"]:hover){outline-color:var(--edge-color);}\n");
+              .append(":has(~ .node-clone-ref.lbl-").append(token)
+              .append(":hover){outline-color:var(--edge-color);}\n");
         }
         sb.append("  </style>\n");
     }
@@ -89,7 +89,19 @@ public class HtmlDiagramRenderer {
         sb.append("  </div>\n");
     }
 
+    private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {
+        sb.append("  <div class=\"node-clone-ref lbl-").append(Html.labelToken(n.state.label))
+          .append("\" style=\"left:").append(n.x).append("px;top:").append(n.y)
+          .append("px;width:").append(n.width).append("px\"")
+          .append(" title=\"").append(Html.esc(n.state.label + " と同じものです（ホバーで元のボックスを強調表示）")).append('"')
+          .append(">").append(Html.esc(n.state.label)).append("</div>\n");
+    }
+
     private void renderNode(StringBuilder sb, Layout.NodeBox n) {
+        if (n.clone) {
+            renderCloneRef(sb, n);
+            return;
+        }
         StateSpec s = n.state;
         String kindClass = s.isProcedure() ? "k-procedure" : "k-status";
         String badge = s.isProcedure() ? Palette.KIND_BADGE_LABEL_PROCEDURE : Palette.KIND_BADGE_LABEL_STATUS;
@@ -100,11 +112,6 @@ public class HtmlDiagramRenderer {
         }
         sb.append(" lbl-").append(Html.labelToken(s.label))
           .append("\" data-label=\"").append(Html.esc(s.label)).append('"');
-        if (n.clone) {
-            sb.append(" data-clone=\"true\" title=\"")
-              .append(Html.esc(s.label + " と同じものです（ホバーで元のボックスを強調表示）"))
-              .append('"');
-        }
         if (n.isolated) {
             sb.append(" data-unconnected=\"true\" title=\"")
               .append(Html.esc("どこからも参照されておらず、遷移先も無いステータス/手続きです"))
@@ -123,7 +130,7 @@ public class HtmlDiagramRenderer {
         sb.append("<span class=\"state-label\">").append(Html.esc(s.label)).append("</span>")
           .append("</div>\n");
 
-        List<ActionSpec> actions = n.clone ? List.of() : s.safeActions();
+        List<ActionSpec> actions = s.safeActions();
         if (!actions.isEmpty()) {
             sb.append("    <div class=\"node-actions\">\n");
             for (ActionSpec a : actions) {

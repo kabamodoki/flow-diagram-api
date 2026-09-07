@@ -26,7 +26,8 @@
   <div class="pane-left">
     <div class="head">
       <h1>入力JSON</h1>
-      <button type="button" id="btnSample">サンプル</button>
+      <button type="button" id="btnSample1">サンプル1</button>
+      <button type="button" id="btnSample2">サンプル2</button>
       <button type="button" class="primary" id="btnRender">描画</button>
     </div>
     <textarea id="json" spellcheck="false"></textarea>
@@ -49,8 +50,8 @@
     err.style.display = 'none';
   }
 
-  function loadSample() {
-    fetch('/api/sample')
+  function loadSample(n) {
+    fetch('/api/sample/' + n)
       .then(function (r) { return r.json(); })
       .then(function (j) { ta.value = JSON.stringify(j, stripNulls, 2); render(); })
       .catch(function (e) { showError('サンプルの取得に失敗しました: ' + e); });
@@ -87,12 +88,13 @@
   }
 
   document.getElementById('btnRender').addEventListener('click', render);
-  document.getElementById('btnSample').addEventListener('click', loadSample);
+  document.getElementById('btnSample1').addEventListener('click', function () { loadSample(1); });
+  document.getElementById('btnSample2').addEventListener('click', function () { loadSample(2); });
   ta.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.key === 'Enter') { render(); }
   });
 
-  loadSample();
+  loadSample(1);
 })();
 </script>
 </body>

@@ -94,7 +94,7 @@ class HtmlDiagramRendererTest {
     @Test
     void selfLoopAndBackEdgeProduceCloneNodesNotBackLines() {
         String html = renderCanvas(sample());
-        assertTrue(html.contains("data-clone=\"true\""));
+        assertTrue(html.contains("class=\"node-clone-ref"));
         // 複製ノードは fromStateLabel のみを持つ edge（常に前進）として描画される
         assertFalse(html.contains("data-to="), "旧仕様の後退辺表現が残っていないこと");
     }
@@ -118,13 +118,13 @@ class HtmlDiagramRendererTest {
         String tokenB = Html.labelToken("審査");
         assertTrue(html.contains("lbl-" + tokenA) && html.contains("lbl-" + tokenB),
                 "label ハッシュ化済みクラスが付与されること");
-        assertTrue(html.contains(":has(~ .node.lbl-"), "複製がある label については :has() ルールが出ること");
+        assertTrue(html.contains(":has(~ .node-clone-ref.lbl-"), "複製がある label については :has() ルールが出ること");
     }
 
     @Test
     void cloneNodeHasTitleButRealNodeDoesNot() {
         String html = renderCanvas(sample());
-        assertTrue(html.contains("data-clone=\"true\" title=\""), "複製には説明用の title を付与する");
+        assertTrue(html.contains("class=\"node-clone-ref") && html.contains("title=\""), "複製には説明用の title を付与する");
         // 実ノード（クローンでない「未開始」）の開始タグに title が付いていないこと
         String tag = "class=\"node k-status lbl-" + Html.labelToken("未開始") + "\" data-label=\"未開始\"";
         int realTagStart = html.indexOf(tag);
@@ -142,7 +142,7 @@ class HtmlDiagramRendererTest {
         StateSpec b = new StateSpec("B");
         spec.states = new ArrayList<>(List.of(a, b));
         String html = renderCanvas(spec);
-        assertFalse(html.contains(":has(~ .node.lbl-"), "複製が無い図には強調用CSSを出さない");
+        assertFalse(html.contains(":has(~ .node-clone-ref.lbl-"), "複製が無い図には強調用CSSを出さない");
     }
 
     @Test
@@ -150,7 +150,7 @@ class HtmlDiagramRendererTest {
         Theme theme = Theme.defaults();
         Layout layout = new LayoutEngine(theme).build(sample());
         Layout.NodeBox clone = layout.nodes.stream().filter(n -> n.clone).findFirst().orElseThrow();
-        assertEquals(theme.headerHeight, clone.height, "複製はヘッダのみの高さで、アクションを持たない");
+        assertEquals(LayoutEngine.CLONE_TEXT_HEIGHT, clone.height, "複製はテキスト表示のみの高さ");
     }
 
     @Test
