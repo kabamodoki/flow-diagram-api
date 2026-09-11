@@ -247,6 +247,46 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void fontFamilyDefaultsToMeiryoUi() {
+        // basic-design.md v3.5: フォント既定値を Meiryo UI 優先へ変更
+        String css = new CssBuilder(Theme.defaults()).build();
+        assertTrue(css.contains("Meiryo UI"), "既定フォントに Meiryo UI が含まれること");
+    }
+
+    @Test
+    void actionLabelWrapsInsteadOfEllipsis() {
+        // basic-design.md v3.5: ボタン名は折り返し表示にし、ellipsis で省略しない
+        String css = new CssBuilder(Theme.defaults()).build();
+        int actionLabelRuleStart = css.indexOf(".action .action-label{");
+        assertTrue(actionLabelRuleStart >= 0);
+        int ruleEnd = css.indexOf('}', actionLabelRuleStart);
+        String rule = css.substring(actionLabelRuleStart, ruleEnd);
+        assertTrue(rule.contains("white-space:normal"), "折り返しを許可すること");
+        assertTrue(rule.contains("overflow-wrap:anywhere"), "日本語でも折り返せること");
+        assertFalse(rule.contains("text-overflow:ellipsis"), "省略記号は出さないこと");
+    }
+
+    @Test
+    void longActionLabelGetsTallerMinHeightInline() {
+        FlowSpec spec = new FlowSpec();
+        StateSpec a = new StateSpec("A");
+        a.actions = new ArrayList<>(List.of(
+                new ActionSpec("button", "短い", "B"),
+                new ActionSpec("button", "非常に長いボタンのラベルで折り返しが必要になるはずのテキストです", "B")));
+        StateSpec b = new StateSpec("B");
+        spec.states = new ArrayList<>(List.of(a, b));
+        Theme theme = spec.resolvedTheme();
+        Layout layout = new LayoutEngine(theme).build(spec);
+        String html = new HtmlDiagramRenderer(theme, StyleRegistry.resolveKindStyles(spec),
+                StyleRegistry.resolveTypeStyles(spec)).render(layout);
+
+        assertTrue(html.contains("min-height:" + theme.actionRowHeight + "px"), "短いラベルは既定の高さのまま");
+        boolean hasTallerRow = layout.nodeByLabel().get("A").actionRowHeights.stream()
+                .anyMatch(h -> h > theme.actionRowHeight);
+        assertTrue(hasTallerRow, "長いラベルのチップは既定より高い min-height を持つこと");
+    }
+
+    @Test
     void themeLayoutOverrideIsApplied() {
         FlowSpec spec = sample();
         spec.theme = new Theme();

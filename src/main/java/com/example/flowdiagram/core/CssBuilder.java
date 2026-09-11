@@ -77,11 +77,11 @@ public class CssBuilder {
                 /* --- アクション。色は type ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
                 .fd-canvas .node-actions{display:flex;flex-direction:column;gap:var(--action-gap);\
                 padding:var(--node-padding-top) 10px var(--node-padding-bottom);}
-                .fd-canvas .action{height:var(--action-height);min-height:var(--action-height);\
+                .fd-canvas .action{min-height:var(--action-height);\
                 display:flex;align-items:center;justify-content:space-between;gap:8px;\
-                padding:0 12px;border-radius:8px;font-size:var(--action-font-size);}
-                .fd-canvas .action .action-label{flex:1 1 auto;white-space:nowrap;overflow:hidden;\
-                text-overflow:ellipsis;}
+                padding:4px 12px;border-radius:8px;font-size:var(--action-font-size);}
+                .fd-canvas .action .action-label{flex:1 1 auto;white-space:normal;\
+                overflow-wrap:anywhere;line-height:1.35;}
                 .fd-canvas .action .chev{flex:0 0 auto;font-weight:700;opacity:.7;}
 
                 /* --- 関係線（すべて薄い青の実線で統一） --- */

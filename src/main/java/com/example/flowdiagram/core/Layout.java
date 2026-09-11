@@ -20,6 +20,8 @@ public class Layout {
         public int height;
         /** true の場合、state.actions に関わらずアクションを描画しない（basic-design.md 6.5）。 */
         public boolean clone;
+        /** アクションチップごとの実高さ（basic-design.md 6.1.1）。長いラベルの折り返しを見込んだ px。 */
+        public List<Integer> actionRowHeights = new ArrayList<>();
 
         public int right() {
             return x + width;

@@ -100,6 +100,36 @@ class LayoutEngineTest {
     }
 
     @Test
+    void longLabelGetsTallerRowHeightForWrapping() {
+        // basic-design.md v3.5 6.1.1: 折り返しが必要な長いラベルはチップの高さが actionRowHeight を超える
+        Map<String, Layout.NodeBox> n = realNodes(spec(
+                state("a",
+                        go("短い", "b"),
+                        go("非常に長いボタンのラベルで折り返しが必要になるはずのテキストです", "b")),
+                state("b")));
+        Layout.NodeBox a = n.get("a");
+        assertEquals(2, a.actionRowHeights.size());
+        assertEquals(theme.actionRowHeight, a.actionRowHeights.get(0), "短いラベルは1行のまま");
+        assertTrue(a.actionRowHeights.get(1) > theme.actionRowHeight, "長いラベルは折り返して背が高くなる");
+    }
+
+    @Test
+    void actionAnchorYAccountsForPriorWrappedRowHeights() {
+        Map<String, Layout.NodeBox> n = realNodes(spec(
+                state("a",
+                        go("非常に長いボタンのラベルで折り返しが必要になるはずのテキストです", "b"),
+                        go("次", "b")),
+                state("b")));
+        Layout.NodeBox a = n.get("a");
+        LayoutEngine engine = new LayoutEngine(theme);
+        int anchor0 = engine.actionAnchorY(a, 0);
+        int anchor1 = engine.actionAnchorY(a, 1);
+        int expectedGapBetweenAnchors = a.actionRowHeights.get(0) / 2 + theme.actionGap + a.actionRowHeights.get(1) / 2;
+        assertEquals(expectedGapBetweenAnchors, anchor1 - anchor0,
+                "2番目のチップのアンカーyは、1番目の実高さ（折り返し込み）を反映していること");
+    }
+
+    @Test
     void allSegmentsAreOrthogonal() {
         Layout l = buildLayout(spec(
                 state("a", go("x", "b"), go("self", "a")),

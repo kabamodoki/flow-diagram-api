@@ -46,7 +46,7 @@ public class Theme {
         t.rowGap = 40;
         t.canvasPadding = 40;
 
-        t.fontFamily = "\"Segoe UI\",\"Hiragino Kaku Gothic ProN\",\"Yu Gothic\",Meiryo,sans-serif";
+        t.fontFamily = "\"Meiryo UI\",\"Yu Gothic UI\",\"Segoe UI\",Meiryo,\"Hiragino Kaku Gothic ProN\",sans-serif";
         t.titleFontSize = 20;
         t.badgeFontSize = 10;
         t.stateFontSize = 15;

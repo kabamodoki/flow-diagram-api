@@ -53,7 +53,11 @@ public class LayoutEngine {
             box.state = s;
             box.column = columns[i];
             box.width = theme.nodeWidth;
-            box.height = nodeHeight(s.safeActions().size());
+            List<ActionSpec> boxActions = s.safeActions();
+            for (ActionSpec a : boxActions) {
+                box.actionRowHeights.add(actionRowHeight(a));
+            }
+            box.height = nodeHeight(boxActions, box.actionRowHeights);
             placeInColumn(box, nextYByColumn, topY);
             layout.nodes.add(box);
             boxes.put(s.label, box);
@@ -163,7 +167,7 @@ public class LayoutEngine {
         nextYByColumn.put(box.column, y + box.height + theme.rowGap);
     }
 
-    /** ノード高さ（basic-design.md 6.1）。 */
+    /** ノード高さ（basic-design.md 6.1）。全チップが1行に収まる前提の単純式（テスト・既定計算用）。 */
     public int nodeHeight(int actionCount) {
         if (actionCount == 0) {
             return theme.headerHeight;
@@ -173,11 +177,64 @@ public class LayoutEngine {
                 + theme.nodePaddingBottom;
     }
 
-    /** アクションチップ j の中央 y（矢印の起点）。 */
+    /** ノード高さ（basic-design.md 6.1）。チップごとの実高さ（折り返し考慮）を積み上げる版。 */
+    private int nodeHeight(List<ActionSpec> actions, List<Integer> rowHeights) {
+        if (actions.isEmpty()) {
+            return theme.headerHeight;
+        }
+        int sum = 0;
+        for (int h : rowHeights) {
+            sum += h;
+        }
+        return theme.headerHeight + theme.nodePaddingTop
+                + sum + theme.actionGap * (actions.size() - 1)
+                + theme.nodePaddingBottom;
+    }
+
+    /** アクションチップ j の中央 y（矢印の起点）。それより前のチップの実高さを積み上げる（basic-design.md 6.4）。 */
     public int actionAnchorY(Layout.NodeBox box, int j) {
         int y = box.y + theme.headerHeight + theme.nodePaddingTop;
-        y += j * (theme.actionRowHeight + theme.actionGap);
-        return y + theme.actionRowHeight / 2;
+        for (int i = 0; i < j; i++) {
+            y += box.actionRowHeights.get(i) + theme.actionGap;
+        }
+        return y + box.actionRowHeights.get(j) / 2;
+    }
+
+    /**
+     * アクションチップ1件の実高さ（basic-design.md 6.1.1）。ラベルがチップ幅に収まらない場合は
+     * 折り返し表示になるため、概算の行数から高さを見積もる。フォントメトリクスは使わず、
+     * 全角相当の文字を1.0em・それ以外を0.55emとして幅を積算する簡易推定。
+     */
+    private int actionRowHeight(ActionSpec a) {
+        int availableWidth = theme.nodeWidth - ACTION_LABEL_H_RESERVE;
+        if (availableWidth <= 0) {
+            return theme.actionRowHeight;
+        }
+        int estimatedTextWidth = estimateTextWidthPx(a.label, theme.actionFontSize);
+        int lines = Math.max(1, (int) Math.ceil(estimatedTextWidth / (double) availableWidth));
+        if (lines <= 1) {
+            return theme.actionRowHeight;
+        }
+        int lineHeight = (int) Math.round(theme.actionFontSize * 1.35);
+        return Math.max(theme.actionRowHeight, lines * lineHeight + ACTION_LABEL_V_PADDING);
+    }
+
+    private static int estimateTextWidthPx(String text, int fontSizePx) {
+        double widthEm = 0;
+        for (int i = 0; i < text.length(); i++) {
+            widthEm += isWideChar(text.charAt(i)) ? 1.0 : 0.55;
+        }
+        return (int) Math.ceil(widthEm * fontSizePx);
+    }
+
+    /** 全角相当（CJK統合漢字・ひらがな・カタカナ・全角記号など）かどうかの簡易判定。 */
+    private static boolean isWideChar(char c) {
+        return (c >= 0x1100 && c <= 0x115F)
+                || (c >= 0x2E80 && c <= 0xA4CF)
+                || (c >= 0xAC00 && c <= 0xD7A3)
+                || (c >= 0xF900 && c <= 0xFAFF)
+                || (c >= 0xFF00 && c <= 0xFF60)
+                || (c >= 0xFFE0 && c <= 0xFFE6);
     }
 
     /**
@@ -319,6 +376,9 @@ public class LayoutEngine {
     private static final int SKIP_LANE_PITCH = 14;
     private static final int SKIP_LANE_STAGGER = 8;
     public static final int CLONE_TEXT_HEIGHT = 28;
+    /** アクションラベル用の利用可能幅を見積もる際に引く分（node-actions左右padding20 + action左右padding24 + chevron予約20）。 */
+    private static final int ACTION_LABEL_H_RESERVE = 64;
+    private static final int ACTION_LABEL_V_PADDING = 12;
 
     /**
      * 前進エッジの経路（basic-design.md 6.4）。折れ位置は終点寄り（v3.1）。

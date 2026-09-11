@@ -167,9 +167,11 @@ public class HtmlDiagramRenderer {
         List<ActionSpec> actions = s.safeActions();
         if (!actions.isEmpty()) {
             sb.append("    <div class=\"node-actions\">\n");
-            for (ActionSpec a : actions) {
+            for (int j = 0; j < actions.size(); j++) {
+                ActionSpec a = actions.get(j);
                 String typeClass = "type-" + Html.labelToken(a.effectiveType());
-                sb.append("      <div class=\"action ").append(typeClass).append("\">")
+                sb.append("      <div class=\"action ").append(typeClass)
+                  .append("\" style=\"min-height:").append(n.actionRowHeights.get(j)).append("px\">")
                   .append("<span class=\"action-label\">").append(Html.esc(a.label)).append("</span>");
                 if (!a.effectiveNextTargets().isEmpty()) {
                     sb.append("<span class=\"chev\">&rsaquo;</span>");
