@@ -119,21 +119,62 @@ public class HtmlDiagramRenderer {
 
     private void renderEdge(StringBuilder sb, Layout.EdgeRoute e) {
         sb.append("  <div class=\"edge\" data-from=\"").append(Html.esc(e.fromStateLabel)).append("\">\n");
-        for (Layout.Segment s : e.segments) {
+        List<Layout.Segment> segs = e.segments;
+        for (int i = 0; i < segs.size(); i++) {
+            Layout.Segment s = segs.get(i);
+            Layout.Segment prev = i > 0 ? segs.get(i - 1) : null;
+            Layout.Segment next = i < segs.size() - 1 ? segs.get(i + 1) : null;
+            int startX = s.x;
+            int startY = s.y;
+            int endX = s.horizontal ? s.x + s.width : s.x;
+            int endY = s.horizontal ? s.y : s.y + s.height;
+            boolean extendStart = touchesEndpoint(startX, startY, prev) || touchesEndpoint(startX, startY, next);
+            boolean extendEnd = touchesEndpoint(endX, endY, prev) || touchesEndpoint(endX, endY, next);
+
             if (s.horizontal) {
-                sb.append("    <div class=\"seg h\" style=\"left:calc(").append(s.x)
-                  .append("px - var(--edge-w) / 2);top:calc(").append(s.y).append("px - var(--edge-w) / 2);width:calc(")
-                  .append(s.width).append("px + var(--edge-w))\"></div>\n");
+                String left = extendStart ? "calc(" + s.x + "px - var(--edge-w) / 2)" : s.x + "px";
+                String width = extendWidth(s.width, extendStart, extendEnd);
+                sb.append("    <div class=\"seg h\" style=\"left:").append(left)
+                  .append(";top:calc(").append(s.y).append("px - var(--edge-w) / 2);width:").append(width)
+                  .append("\"></div>\n");
             } else {
+                String top = extendStart ? "calc(" + s.y + "px - var(--edge-w) / 2)" : s.y + "px";
+                String height = extendWidth(s.height, extendStart, extendEnd);
                 sb.append("    <div class=\"seg v\" style=\"left:calc(").append(s.x)
-                  .append("px - var(--edge-w) / 2);top:calc(").append(s.y).append("px - var(--edge-w) / 2);height:calc(")
-                  .append(s.height).append("px + var(--edge-w))\"></div>\n");
+                  .append("px - var(--edge-w) / 2);top:").append(top).append(";height:").append(height)
+                  .append("\"></div>\n");
             }
         }
         sb.append("    <div class=\"arrow\" style=\"left:calc(").append(e.arrowX)
           .append("px - var(--arrow-size));top:calc(").append(e.arrowY)
           .append("px - var(--arrow-size) * 0.6)\"></div>\n");
         sb.append("  </div>\n");
+    }
+
+    /**
+     * (x,y) が隣接セグメント {@code other} のどちらかの端点と一致するか（basic-design.md 9章）。
+     * 一致する＝経路内部の継ぎ目なので、その端は `--edge-w` 分延長してよい。
+     * 一致しない＝経路全体の起点（発火元ボックス側）または終点（矢印の先端）なので延長しない。
+     */
+    private static boolean touchesEndpoint(int x, int y, Layout.Segment other) {
+        if (other == null) {
+            return false;
+        }
+        int oStartX = other.x;
+        int oStartY = other.y;
+        int oEndX = other.horizontal ? other.x + other.width : other.x;
+        int oEndY = other.horizontal ? other.y : other.y + other.height;
+        return (x == oStartX && y == oStartY) || (x == oEndX && y == oEndY);
+    }
+
+    private static String extendWidth(int base, boolean extendStart, boolean extendEnd) {
+        if (extendStart && extendEnd) {
+            return "calc(" + base + "px + var(--edge-w))";
+        }
+        if (extendStart || extendEnd) {
+            return "calc(" + base + "px + var(--edge-w) / 2)";
+        }
+        return base + "px";
     }
 
     private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {

@@ -166,6 +166,18 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void arrowTipIsNotOvershotByLastSegmentExtension() {
+        // basic-design.md v3.6: v3.4の対称延長は経路の終点（矢印の先端）にもかかってしまい、
+        // 矢印の三角形を線が突き抜けて見える不具合を生んでいた。矢印の直前に来るセグメントが
+        // 「両端とも --edge-w 分延長された」形（内部の継ぎ目用の延長）であってはならない
+        String html = renderCanvas(sample());
+        java.util.regex.Pattern overshoot = java.util.regex.Pattern.compile(
+                "var\\(--edge-w\\)\\)\"></div>\\s*<div class=\"arrow\"");
+        assertFalse(overshoot.matcher(html).find(),
+                "矢印直前のセグメントが両端延長（内部継ぎ目用）になっていないこと");
+    }
+
+    @Test
     void noIdConceptRemainsInMarkup() {
         String html = renderCanvas(sample());
         assertFalse(html.contains("data-id="));
