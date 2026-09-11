@@ -130,16 +130,22 @@ public class HtmlDiagramRenderer {
             int endY = s.horizontal ? s.y : s.y + s.height;
             boolean extendStart = touchesEndpoint(startX, startY, prev) || touchesEndpoint(startX, startY, next);
             boolean extendEnd = touchesEndpoint(endX, endY, prev) || touchesEndpoint(endX, endY, next);
+            // 矢印に接続する最後のセグメントは、矢印の先端（arrowX/arrowY）ではなく根元で止める
+            // （basic-design.md 9章）。三角形は先端に近づくほど細くなるため、線をそのまま先端まで
+            // 伸ばすと先端付近で三角形の斜辺からはみ出して見える。
+            boolean isLast = i == segs.size() - 1;
 
             if (s.horizontal) {
+                int drawWidth = isLast ? Math.max(0, s.width - theme.arrowSize) : s.width;
                 String left = extendStart ? "calc(" + s.x + "px - var(--edge-w) / 2)" : s.x + "px";
-                String width = extendWidth(s.width, extendStart, extendEnd);
+                String width = extendWidth(drawWidth, extendStart, extendEnd);
                 sb.append("    <div class=\"seg h\" style=\"left:").append(left)
                   .append(";top:calc(").append(s.y).append("px - var(--edge-w) / 2);width:").append(width)
                   .append("\"></div>\n");
             } else {
+                int drawHeight = isLast ? Math.max(0, s.height - theme.arrowSize) : s.height;
                 String top = extendStart ? "calc(" + s.y + "px - var(--edge-w) / 2)" : s.y + "px";
-                String height = extendWidth(s.height, extendStart, extendEnd);
+                String height = extendWidth(drawHeight, extendStart, extendEnd);
                 sb.append("    <div class=\"seg v\" style=\"left:calc(").append(s.x)
                   .append("px - var(--edge-w) / 2);top:").append(top).append(";height:").append(height)
                   .append("\"></div>\n");

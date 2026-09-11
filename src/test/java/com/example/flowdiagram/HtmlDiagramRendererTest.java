@@ -178,6 +178,30 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void lastSegmentStopsAtArrowBaseNotTip() {
+        // basic-design.md v3.7: 矢印の三角形は先端に近づくほど細くなるため、線を先端まで伸ばすと
+        // 斜辺からはみ出して見える。矢印に接続する最後のセグメントは arrowX - arrowSize（根元）で
+        // 止め、arrowX（先端）までは伸ばさないこと
+        FlowSpec spec = sample();
+        Theme theme = spec.resolvedTheme();
+        Layout layout = new LayoutEngine(theme).build(spec);
+        String html = renderCanvas(spec);
+        for (Layout.EdgeRoute e : layout.edges) {
+            Layout.Segment last = e.segments.get(e.segments.size() - 1);
+            assertTrue(last.horizontal, "最後のセグメントは常に水平（矢印は右向き）");
+            assertEquals(e.arrowX, last.x + last.width, "セグメントの幾何座標自体は矢印の先端と一致する");
+
+            // 直前のセグメントと繋がる側（extendStart）の有無で式の形が変わるので両方許容する
+            String base = last.width - theme.arrowSize + "px";
+            String withHalfEdge = "calc(" + (last.width - theme.arrowSize) + "px + var(--edge-w) / 2)";
+            assertTrue(html.contains("width:" + base) || html.contains("width:" + withHalfEdge),
+                    "最後のセグメントの描画幅は、幾何幅から arrowSize 分短縮されていること");
+            assertFalse(html.contains("width:" + last.width + "px"),
+                    "最後のセグメントが短縮前の幾何幅そのままで描画されていないこと");
+        }
+    }
+
+    @Test
     void noIdConceptRemainsInMarkup() {
         String html = renderCanvas(sample());
         assertFalse(html.contains("data-id="));
