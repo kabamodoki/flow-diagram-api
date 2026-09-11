@@ -405,6 +405,25 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void fullPageHasNoToolbarOrScript() {
+        // basic-design.md v3.8: PostmanなどAPIレスポンスをそのまま使う用途ではツールバー
+        // （拡大/縮小/等倍/HTMLを保存）とそのJSが不要とのユーザー指示で廃止した
+        FlowSpec spec = sample();
+        Theme theme = spec.resolvedTheme();
+        Layout layout = new LayoutEngine(theme).build(spec);
+        String css = new CssBuilder(theme).build();
+        String canvas = new HtmlDiagramRenderer(theme, StyleRegistry.resolveKindStyles(spec),
+                StyleRegistry.resolveTypeStyles(spec)).render(layout);
+        String page = new HtmlPageWriter(theme).page(spec.title, css, canvas);
+
+        assertFalse(page.contains("fd-toolbar"), "ツールバーのHTML/CSSが残っていないこと");
+        assertFalse(page.contains("<script>"), "ズーム・保存用のJSが残っていないこと");
+        assertFalse(page.contains("HTMLを保存"));
+        assertFalse(page.contains("縮小"));
+        assertFalse(page.contains("拡大"));
+    }
+
+    @Test
     void fragmentHasNoDoctype() {
         FlowSpec spec = sample();
         Theme theme = spec.resolvedTheme();

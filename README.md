@@ -29,7 +29,7 @@ curl -X POST http://localhost:8080/api/diagram \
 
 | メソッド | パス | 返すもの |
 |---------|------|---------|
-| POST | `/api/diagram` | ブラウザでそのまま開ける完結した HTML（ツールバー付き） |
+| POST | `/api/diagram` | ブラウザでそのまま開ける完結した HTML（JSなし。APIレスポンスをそのまま使う用途向け） |
 | POST | `/api/diagram/fragment` | `<style>` + 図本体だけの HTML 断片（既存ページへの埋め込み用） |
 | GET | `/api/sample` | サンプル1と同内容（後方互換） |
 | GET | `/api/sample/1` | サンプル1のJSON（ボタン型。`kinds`/`types`定義入り。1アクションから複数遷移の実例入り） |
