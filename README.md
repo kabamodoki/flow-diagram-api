@@ -5,19 +5,24 @@
 
 図は **画像（SVG / PNG / canvas）を一切使わず、`div` と CSS だけ**で組み立てられている。
 
+**v3.0からの方針**: 大枠の種別（`kind`）やアクションの種別（`type`）が何を意味するか、
+どんな色にするかを、プログラム側は一切知らない。すべて **リクエストJSONの `kinds`/`types` で定義**する。
+APIは「渡された定義に従って描画する」処理に徹し、設定はできる限りJSON側で完結させる。
+
 ## 動かす
 
 ```bash
 mvn spring-boot:run
 ```
 
-ブラウザで <http://localhost:8080/> を開くと、左に JSON、右にリアルタイムプレビューの画面が出る。
+ブラウザで <http://localhost:8080/> を開くと、左に JSON、右にリアルタイムプレビューの画面が出る
+（「サンプル1」「サンプル2」ボタンでサンプルを読み込める）。
 
 ```bash
 # 1枚もののHTMLを取得
 curl -X POST http://localhost:8080/api/diagram \
      -H "Content-Type: application/json" \
-     -d @samples/order-flow.json -o out.html
+     -d @samples/sample1.json -o out.html
 ```
 
 ## API
@@ -26,7 +31,9 @@ curl -X POST http://localhost:8080/api/diagram \
 |---------|------|---------|
 | POST | `/api/diagram` | ブラウザでそのまま開ける完結した HTML（ツールバー付き） |
 | POST | `/api/diagram/fragment` | `<style>` + 図本体だけの HTML 断片（既存ページへの埋め込み用） |
-| GET | `/api/sample` | サンプル JSON |
+| GET | `/api/sample` | サンプル1と同内容（後方互換） |
+| GET | `/api/sample/1` | サンプル1のJSON（ボタン型。`kinds`/`types`定義入り。1アクションから複数遷移の実例入り） |
+| GET | `/api/sample/2` | サンプル2のJSON（フロー型。`kinds`/`types`定義入り） |
 | GET | `/` | プレビュー画面 |
 
 エラー時は 400 と `{"error":"VALIDATION_ERROR","messages":[...]}`。違反は全件まとめて返る。
@@ -35,26 +42,26 @@ curl -X POST http://localhost:8080/api/diagram \
 
 ```json
 {
-  "title": "注文フロー",
+  "title": "申請ワークフロー",
+  "kinds": {
+    "ステータス": { "headerBackground": "#eaf4ff", "background": "#f8fbfe", "border": "#cfe3f5", "textColor": "#2c6291" },
+    "手続き":     { "headerBackground": "#eaf8ee", "background": "#f8fcf9", "border": "#cdeada", "textColor": "#2f7a52" }
+  },
+  "types": {
+    "button": { "background": "#ffffff", "border": "#c4c9d0", "borderWidth": 1.5, "textColor": "#2d3748" },
+    "flow":   { "background": "#f8fbfe", "border": "#7fb8ee", "borderWidth": 1.5, "textColor": "#2c6291" }
+  },
   "states": [
     {
-      "label": "未注文",
-      "kind": "status",
+      "label": "未申請",
+      "kind": "ステータス",
       "actions": [
-        { "type": "button", "label": "注文を確定する", "next": "出荷手続き" },
-        { "type": "button", "label": "カートを空にする", "next": "破棄" }
+        { "type": "button", "label": "申請する", "next": "審査中" },
+        { "type": "button", "label": "破棄", "next": "破棄" }
       ]
     },
-    {
-      "label": "出荷手続き",
-      "kind": "procedure",
-      "actions": [
-        { "type": "button", "label": "出荷する", "next": "出荷済み" },
-        { "type": "flow", "label": "在庫切れ", "next": "未注文" }
-      ]
-    },
-    { "label": "出荷済み", "kind": "status" },
-    { "label": "破棄", "kind": "status" }
+    { "label": "審査中", "kind": "手続き" },
+    { "label": "破棄", "kind": "ステータス" }
   ]
 }
 ```
@@ -65,30 +72,67 @@ curl -X POST http://localhost:8080/api/diagram \
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
 | `label` | ○ | 表示名。**同時に識別子でもある** |
-| `kind` | | `"status"`（ステータス・薄い青）または `"procedure"`（手続き・薄い緑）。省略時は `status` |
+| `kind` | | **任意の文字列**。`kinds` のキーと対応させる（下記）。省略時は内部的に `"default"` |
 | `actions` | | アクション配列（省略時は終端） |
 
 ### actions[]
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
 | `label` | ○ | アクション名（例: 申請する） |
-| `type` | | `"button"`（白いボタン然とした見た目）または `"flow"`（薄い青枠）。省略時は `button` |
-| `next` | | 遷移先の **`label`**。省略すると矢印を描かない |
+| `type` | | **任意の文字列**。`types` のキーと対応させる（下記）。省略時は内部的に `"default"` |
+| `next` | | 遷移先の **`label`**。文字列でも配列でも指定できる（下記）。省略すると矢印を描かない |
+
+### 1つのアクションから複数の遷移先へ
+`next` は単一の文字列だけでなく配列も受け付ける。単一の文字列を渡した場合は自動的に1件の配列として
+扱われる（後方互換）。配列で複数指定すると、そのアクション1つから複数の矢印が出る。
+
+```json
+{ "type": "button", "label": "承認", "next": ["承認済み", "通知送信"] }
+```
 
 ### 自己ループ・後戻りの扱い（重要）
 `next` が自分自身（自己ループ）、または前の列に戻る遷移（差し戻し等）は、
-**実際のボックスへ線を引き直さない**。代わりに遷移先と同じ見た目のボックスを新規に右側へ複製し、
-そこをアクションの無い終端として描画する。図が矢印だらけで交差するのを防ぐための仕様。
+**実際のボックスへ線を引き直さない**。代わりに遷移先ラベルを軽量なテキスト参照
+（「↩ ラベル名」とだけ表示、ホバーで元のボックスが強調される）として右側に描画する。
 
-### 未接続ノードの表示
-どこからも `next` で参照されず、自身にもアクションが無い（＝グラフ上どこにも繋がっていない）
-ステータス／手続きは、点線の枠＋「未接続」バッジで他と区別して表示される。
-矢印で繋がっている通常の終端（例: 「完了」「キャンセル」）は対象外で、実線のまま表示される。
-JSONの書き漏れに気づきやすくするための機能。
+### 列を2つ以上飛び越す遷移
+1つのアクションの遷移先が、隣の列ではなくさらに先の列にある場合（例: 途中の手続きを飛ばして
+最後のステータスへ直接遷移する等）、線は**すべてのボックスより下を通る迂回経路**で描かれる。
+中間のボックスの背後を線が通り抜けて見えなくなる（＝繋がりが分かりにくくなる）のを防ぐため。
 
 ## 見た目を変える
 
-### レイアウト・文字サイズなど: JSON の `theme` で部分上書き
+見た目は大きく3つに分かれる。**色（kind/type）はJSONで、レイアウトの数値もJSONで、
+それ以外の共通色（関係線・未接続マーカー）だけソースコードで**、という切り分け。
+
+### kind（大枠の種別）の見た目: ルートの `kinds`
+キー＝`states[].kind` で使う文字列。値はすべて任意項目。
+
+| フィールド | 説明 |
+|-----------|------|
+| `headerBackground` | ヘッダー行の背景色 |
+| `background` | ボックス本体の背景色 |
+| `border` | ボックス枠の色 |
+| `textColor` | ヘッダー文字・バッジ文字の色 |
+
+`kinds` に無いキーを使う（または `kind` 自体を省略する）と、中立な既定スタイル（灰色系）に
+フォールバックする。バッジの文言は `kind` の値そのもの（別名フィールドは無い）。
+
+### type（アクションの種別）の見た目: ルートの `types`
+キー＝`actions[].type` で使う文字列。値はすべて任意項目。
+
+| フィールド | 説明 |
+|-----------|------|
+| `background` | アクションチップの背景色 |
+| `border` | アクションチップの枠色 |
+| `borderWidth` | 枠の太さ(px)。小数可（例 `1.5`） |
+| `textColor` | チップ文字の色 |
+| `shadow` | チップの影（CSSのbox-shadow値）。省略可 |
+
+`types` に無いキーを使う（または `type` 自体を省略する）と、こちらも中立な既定スタイルに
+フォールバックする。
+
+### レイアウト・文字サイズなど: ルートの `theme`
 ```json
 { "theme": { "nodeWidth": 280, "columnGap": 200, "background": "#ffffff" } }
 ```
@@ -98,16 +142,11 @@ JSONの書き漏れに気づきやすくするための機能。
 | レイアウト | `nodeWidth` `headerHeight` `actionRowHeight` `actionGap` `nodePaddingTop` `nodePaddingBottom` `columnGap` `rowGap` `canvasPadding` |
 | 表示 | `fontFamily` `titleFontSize` `badgeFontSize` `stateFontSize` `actionFontSize` `background` `titleColor` `nodeShadow` `edgeWidth` `arrowSize` `showLegend` |
 
-### 色: ソースコードの `Palette` クラス（JSON からは変更不可）
-色（ステータス／手続き／ボタン／フロー／関係線）は、あえて JSON テーマの対象から外し、
-`src/main/java/com/example/flowdiagram/core/Palette.java` の定数として一箇所にまとめている。
-配色を変えたいときはこのファイルの値だけを書き換えれば、全図に反映される。
+### 関係線の色: ソースコードの `Palette` クラス
+kind/typeに属さない、図全体で共通の色（関係線）だけは、
+あえて JSON の対象から外し `src/main/java/com/example/flowdiagram/core/Palette.java` に置いている。
 
 ```java
-public static final String STATUS_HEADER_BG   = "#dbeeff"; // ステータス（薄い青）
-public static final String PROCEDURE_HEADER_BG = "#ddf3e4"; // 手続き（薄い緑）
-public static final String BUTTON_BG = "#ffffff";           // ボタン型アクション
-public static final String FLOW_BORDER = "#8ec7f0";         // フロー型アクション（薄い青枠）
 public static final String EDGE_COLOR = "#7fb8ee";          // すべての関係線（薄い青の実線）
 ```
 

@@ -7,14 +7,19 @@ import com.example.flowdiagram.core.HtmlPageWriter;
 import com.example.flowdiagram.core.Layout;
 import com.example.flowdiagram.core.LayoutEngine;
 import com.example.flowdiagram.core.Palette;
+import com.example.flowdiagram.core.StyleRegistry;
 import com.example.flowdiagram.model.ActionSpec;
+import com.example.flowdiagram.model.ActionTypeStyle;
 import com.example.flowdiagram.model.FlowSpec;
+import com.example.flowdiagram.model.KindStyle;
 import com.example.flowdiagram.model.StateSpec;
 import com.example.flowdiagram.model.Theme;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -22,14 +27,46 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HtmlDiagramRendererTest {
 
+    /** kinds/types をJSONで明示的に定義したサンプル（basic-design.md v3.0）。 */
     private static FlowSpec sample() {
         FlowSpec spec = new FlowSpec();
         spec.title = "テスト<フロー>";
+
+        Map<String, KindStyle> kinds = new LinkedHashMap<>();
+        KindStyle status = new KindStyle();
+        status.headerBackground = "#eaf4ff";
+        status.background = "#f8fbfe";
+        status.border = "#cfe3f5";
+        status.textColor = "#2c6291";
+        kinds.put("ステータス", status);
+        KindStyle procedure = new KindStyle();
+        procedure.headerBackground = "#eaf8ee";
+        procedure.background = "#f8fcf9";
+        procedure.border = "#cdeada";
+        procedure.textColor = "#2f7a52";
+        kinds.put("手続き", procedure);
+        spec.kinds = kinds;
+
+        Map<String, ActionTypeStyle> types = new LinkedHashMap<>();
+        ActionTypeStyle button = new ActionTypeStyle();
+        button.background = "#ffffff";
+        button.border = "#c4c9d0";
+        button.borderWidth = 1.5;
+        button.textColor = "#2d3748";
+        types.put("button", button);
+        ActionTypeStyle flow = new ActionTypeStyle();
+        flow.background = "#f8fbfe";
+        flow.border = "#7fb8ee";
+        flow.borderWidth = 1.5;
+        flow.textColor = "#2c6291";
+        types.put("flow", flow);
+        spec.types = types;
+
         StateSpec a = new StateSpec("未開始");
-        a.kind = StateSpec.KIND_STATUS;
+        a.kind = "ステータス";
         a.actions = new ArrayList<>(List.of(new ActionSpec("button", "開始", "審査")));
         StateSpec b = new StateSpec("審査");
-        b.kind = StateSpec.KIND_PROCEDURE;
+        b.kind = "手続き";
         b.actions = new ArrayList<>(List.of(
                 new ActionSpec("flow", "自動連携", "審査"),
                 new ActionSpec("button", "戻る", "未開始")));
@@ -40,7 +77,9 @@ class HtmlDiagramRendererTest {
     private static String renderCanvas(FlowSpec spec) {
         Theme theme = spec.resolvedTheme();
         Layout layout = new LayoutEngine(theme).build(spec);
-        return new HtmlDiagramRenderer(theme).render(layout);
+        Map<String, KindStyle> kindStyles = StyleRegistry.resolveKindStyles(spec);
+        Map<String, ActionTypeStyle> typeStyles = StyleRegistry.resolveTypeStyles(spec);
+        return new HtmlDiagramRenderer(theme, kindStyles, typeStyles).render(layout);
     }
 
     @Test
@@ -59,8 +98,6 @@ class HtmlDiagramRendererTest {
 
     @Test
     void escapesHtml() {
-        // label がそのまま識別子を兼ねるため、next の参照整合性を保ったまま
-        // 最初から不正な文字列を label に持つ state を作る（sample() を後から書き換えない）
         FlowSpec spec = new FlowSpec();
         StateSpec a = new StateSpec("<script>alert(1)</script>");
         spec.states = new ArrayList<>(List.of(a));
@@ -76,32 +113,60 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void kindBadgeAndClassAppear() {
+    void kindBadgeShowsRawKindValueAndDynamicClass() {
+        // basic-design.md v3.0: バッジの文言は kind の値そのもの。クラスは kind-<token>
         String html = renderCanvas(sample());
-        assertTrue(html.contains("class=\"node k-status lbl-" + Html.labelToken("未開始") + "\""));
-        assertTrue(html.contains("class=\"node k-procedure lbl-" + Html.labelToken("審査") + "\""));
-        assertTrue(html.contains(Palette.KIND_BADGE_LABEL_STATUS));
-        assertTrue(html.contains(Palette.KIND_BADGE_LABEL_PROCEDURE));
+        assertTrue(html.contains("class=\"node kind-" + Html.labelToken("ステータス")
+                + " lbl-" + Html.labelToken("未開始") + "\""));
+        assertTrue(html.contains("class=\"node kind-" + Html.labelToken("手続き")
+                + " lbl-" + Html.labelToken("審査") + "\""));
+        assertTrue(html.contains(">ステータス</span>"));
+        assertTrue(html.contains(">手続き</span>"));
     }
 
     @Test
-    void actionTypeClassesAppear() {
+    void actionTypeClassesAreDynamicTokens() {
         String html = renderCanvas(sample());
-        assertTrue(html.contains("class=\"action a-button\""));
-        assertTrue(html.contains("class=\"action a-flow\""));
+        assertTrue(html.contains("class=\"action type-" + Html.labelToken("button") + "\""));
+        assertTrue(html.contains("class=\"action type-" + Html.labelToken("flow") + "\""));
+    }
+
+    @Test
+    void undefinedKindAndTypeFallBackToNeutralDefault() {
+        // kinds/types に定義が無いキーを使っても壊れず、既定スタイルが使われること
+        FlowSpec spec = new FlowSpec();
+        StateSpec a = new StateSpec("A");
+        a.kind = "謎の種別";
+        a.actions = new ArrayList<>(List.of(new ActionSpec("謎のタイプ", "next", (String) null)));
+        spec.states = new ArrayList<>(List.of(a));
+        String html = renderCanvas(spec);
+        String css = new CssBuilder(spec.resolvedTheme()).build();
+
+        assertTrue(html.contains("kind-" + Html.labelToken("謎の種別")));
+        assertTrue(html.contains("type-" + Html.labelToken("謎のタイプ")));
+        assertTrue(html.contains(">謎の種別</span>"));
+    }
+
+    @Test
+    void omittedKindAndTypeUseDefaultKey() {
+        FlowSpec spec = new FlowSpec();
+        StateSpec a = new StateSpec("A");
+        a.actions = new ArrayList<>(List.of(new ActionSpec(null, "next", (String) null)));
+        spec.states = new ArrayList<>(List.of(a));
+        String html = renderCanvas(spec);
+        assertTrue(html.contains("kind-" + Html.labelToken("default")));
+        assertTrue(html.contains("type-" + Html.labelToken("default")));
     }
 
     @Test
     void selfLoopAndBackEdgeProduceCloneNodesNotBackLines() {
         String html = renderCanvas(sample());
         assertTrue(html.contains("class=\"node-clone-ref"));
-        // 複製ノードは fromStateLabel のみを持つ edge（常に前進）として描画される
         assertFalse(html.contains("data-to="), "旧仕様の後退辺表現が残っていないこと");
     }
 
     @Test
     void noIdConceptRemainsInMarkup() {
-        // basic-design.md v2.5: id は廃止。data-id ではなく data-label のみが出ること
         String html = renderCanvas(sample());
         assertFalse(html.contains("data-id="));
         assertTrue(html.contains("data-label=\"未開始\""));
@@ -111,7 +176,6 @@ class HtmlDiagramRendererTest {
     @Test
     void cloneHighlightUsesCssOnlyNoJs() {
         String html = renderCanvas(sample());
-        // basic-design.md v2.3: クリック/scrollIntoView のJSは廃止し、:hover + :has() の CSS のみ
         assertFalse(html.contains("addEventListener"));
         assertFalse(html.contains("scrollIntoView"));
         String tokenA = Html.labelToken("未開始");
@@ -122,15 +186,12 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void cloneNodeHasTitleButRealNodeDoesNot() {
+    void cloneNodeHasNoTitleButKeepsHoverHighlight() {
+        // v3.4: title によるツールチップ文言は廃止。CSSの:hover/:has()による強調表示は維持する
         String html = renderCanvas(sample());
-        assertTrue(html.contains("class=\"node-clone-ref") && html.contains("title=\""), "複製には説明用の title を付与する");
-        // 実ノード（クローンでない「未開始」）の開始タグに title が付いていないこと
-        String tag = "class=\"node k-status lbl-" + Html.labelToken("未開始") + "\" data-label=\"未開始\"";
-        int realTagStart = html.indexOf(tag);
-        assertTrue(realTagStart >= 0);
-        int tagEnd = html.indexOf('>', realTagStart);
-        assertFalse(html.substring(realTagStart, tagEnd).contains("title="));
+        assertTrue(html.contains("class=\"node-clone-ref"), "複製ノードは描画される");
+        assertFalse(html.contains("title=\""), "title 属性は出力しない");
+        assertTrue(html.contains(":has(~ .node-clone-ref.lbl-"), "ホバー強調用のCSSルールは維持する");
     }
 
     @Test
@@ -161,27 +222,24 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void paletteColorsAppearInCss() {
+    void jsonDefinedKindAndTypeColorsAppearInMarkupCss() {
+        // basic-design.md v3.0: kind/type の色は JSON 由来で、fd-canvas 内の動的CSSに出る
+        FlowSpec spec = sample();
+        String html = renderCanvas(spec);
+        assertTrue(html.contains("#eaf4ff"), "ステータスのheaderBackgroundが出ること");
+        assertTrue(html.contains("#eaf8ee"), "手続きのheaderBackgroundが出ること");
+        assertTrue(html.contains("#c4c9d0"), "buttonのborderが出ること");
+        assertTrue(html.contains("#7fb8ee"), "flowのborderが出ること");
+    }
+
+    @Test
+    void edgeColorComesFromPaletteNotKindOrType() {
         String css = new CssBuilder(sample().resolvedTheme()).build();
-        assertTrue(css.contains(Palette.STATUS_HEADER_BG));
-        assertTrue(css.contains(Palette.PROCEDURE_HEADER_BG));
-        assertTrue(css.contains(Palette.BUTTON_BG));
-        assertTrue(css.contains(Palette.FLOW_BORDER));
         assertTrue(css.contains(Palette.EDGE_COLOR), "関係線は Palette.EDGE_COLOR で統一されていること");
     }
 
     @Test
-    void actionBordersUsePaletteWidthConstants() {
-        String css = new CssBuilder(sample().resolvedTheme()).build();
-        assertTrue(css.contains(".a-button{background:" + Palette.BUTTON_BG + ";color:" + Palette.BUTTON_TEXT
-                + ";border:" + Palette.BUTTON_BORDER_WIDTH + " solid " + Palette.BUTTON_BORDER));
-        assertTrue(css.contains(".a-flow{background:" + Palette.FLOW_BG + ";color:" + Palette.FLOW_TEXT
-                + ";border:" + Palette.FLOW_BORDER_WIDTH + " solid " + Palette.FLOW_BORDER));
-    }
-
-    @Test
     void allEdgesUseSingleEdgeColorVariable() {
-        // 種別ごとの線色クラス（e-button 等）は廃止され、edge クラスは単一
         String css = new CssBuilder(sample().resolvedTheme()).build();
         long edgeColorOccurrences = css.lines().filter(l -> l.contains("--edge-color")).count();
         assertTrue(edgeColorOccurrences >= 1);
@@ -208,42 +266,47 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void isolatedNodeGetsUnconnectedMarkerButConnectedTerminalDoesNot() {
-        // basic-design.md 6.6/v2.6: 完全に孤立したノードだけに data-unconnected と点線マーカーを出す
+    void unconnectedNodeFeatureIsRemoved() {
+        // basic-design.md v3.1: 未接続ノード機能は廃止。孤立ノードも通常の終端と同じ見た目で描画される
         FlowSpec spec = new FlowSpec();
         StateSpec a = new StateSpec("A");
         a.actions = new ArrayList<>(List.of(new ActionSpec("button", "next", "B")));
-        StateSpec b = new StateSpec("B"); // 終端だが a から参照されている → 未接続ではない
-        StateSpec lonely = new StateSpec("浮いてるやつ"); // 誰からも参照されずアクションも無い → 未接続
+        StateSpec b = new StateSpec("B");
+        StateSpec lonely = new StateSpec("浮いてるやつ"); // 誰からも参照されずアクションも無い
         spec.states = new ArrayList<>(List.of(a, b, lonely));
         String html = renderCanvas(spec);
 
-        assertTrue(html.contains("data-unconnected=\"true\""));
-        assertTrue(html.contains(Palette.UNCONNECTED_BADGE_LABEL));
-
-        String bTag = "class=\"node k-status lbl-" + Html.labelToken("B") + "\" data-label=\"B\"";
-        int bStart = html.indexOf(bTag);
-        assertTrue(bStart >= 0);
-        assertFalse(html.substring(bStart, html.indexOf('>', bStart)).contains("data-unconnected"),
-                "矢印で繋がっている通常の終端には付けない");
-    }
-
-    @Test
-    void noIsolatedNodeMeansNoUnconnectedMarkupOrLegendEntry() {
-        String html = renderCanvas(sample());
         assertFalse(html.contains("data-unconnected"));
-        assertFalse(html.contains(Palette.UNCONNECTED_BADGE_LABEL));
+        assertFalse(html.contains("is-unconnected"));
         assertFalse(html.contains("swatch unconnected"));
+        assertFalse(html.contains("未接続"));
     }
 
     @Test
-    void legendShowsFixedFourCategories() {
+    void legendListsActualKindsAndTypesUsed() {
         String html = renderCanvas(sample());
         assertTrue(html.contains("class=\"legend\""));
-        assertTrue(html.contains("swatch status"));
-        assertTrue(html.contains("swatch procedure"));
-        assertTrue(html.contains("chip button"));
-        assertTrue(html.contains("chip flow"));
+        assertTrue(html.contains(">ステータス</span>"));
+        assertTrue(html.contains(">手続き</span>"));
+        assertTrue(html.contains(">button</span>"));
+        assertTrue(html.contains(">flow</span>"));
+    }
+
+    @Test
+    void oneActionWithMultipleNextTargetsRendersOneChevronAndTwoEdges() {
+        // basic-design.md 3.3/6.4 v3.1: 1つのアクションから複数の矢印を出せる
+        FlowSpec spec = new FlowSpec();
+        StateSpec a = new StateSpec("A");
+        a.actions = new ArrayList<>(List.of(new ActionSpec("button", "go", List.of("B", "C"))));
+        StateSpec b = new StateSpec("B");
+        StateSpec c = new StateSpec("C");
+        spec.states = new ArrayList<>(List.of(a, b, c));
+        String html = renderCanvas(spec);
+
+        long edgeCount = html.lines().filter(l -> l.contains("class=\"edge\" data-from=\"A\"")).count();
+        assertEquals(2, edgeCount, "1つのアクションのnextが2件なら2本のエッジが出ること");
+        long chevronCount = html.lines().filter(l -> l.contains("chev")).count();
+        assertEquals(1, chevronCount, "アクションチップ自体は1つ、矢印マークも1つだけ表示する");
     }
 
     @Test
@@ -251,8 +314,10 @@ class HtmlDiagramRendererTest {
         FlowSpec spec = sample();
         Theme theme = spec.resolvedTheme();
         Layout layout = new LayoutEngine(theme).build(spec);
+        Map<String, KindStyle> kindStyles = StyleRegistry.resolveKindStyles(spec);
+        Map<String, ActionTypeStyle> typeStyles = StyleRegistry.resolveTypeStyles(spec);
         String css = new CssBuilder(theme).build();
-        String canvas = new HtmlDiagramRenderer(theme).render(layout);
+        String canvas = new HtmlDiagramRenderer(theme, kindStyles, typeStyles).render(layout);
         String page = new HtmlPageWriter(theme).page(spec.title, css, canvas);
 
         assertTrue(page.startsWith("<!DOCTYPE html>"));
@@ -268,9 +333,11 @@ class HtmlDiagramRendererTest {
         FlowSpec spec = sample();
         Theme theme = spec.resolvedTheme();
         Layout layout = new LayoutEngine(theme).build(spec);
+        Map<String, KindStyle> kindStyles = StyleRegistry.resolveKindStyles(spec);
+        Map<String, ActionTypeStyle> typeStyles = StyleRegistry.resolveTypeStyles(spec);
         String fragment = new HtmlPageWriter(theme).fragment(
                 new CssBuilder(theme).build(),
-                new HtmlDiagramRenderer(theme).render(layout));
+                new HtmlDiagramRenderer(theme, kindStyles, typeStyles).render(layout));
         assertFalse(fragment.contains("<!DOCTYPE"));
         assertTrue(fragment.contains("<style>"));
         assertTrue(fragment.contains("fd-canvas"));

@@ -7,18 +7,21 @@ import com.example.flowdiagram.model.Theme;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /** 座標計算（basic-design.md 6章）。 */
 public class LayoutEngine {
 
     private static final int LEGEND_HEIGHT = 56;
+
+    /** 確定済みの終点を持つエッジ候補（basic-design.md 6.4のレーン割り当て用）。 */
+    private record EdgeCandidate(int sx, int sy, Layout.NodeBox to, int ty) {
+    }
 
     private final Theme theme;
 
@@ -37,7 +40,6 @@ public class LayoutEngine {
         }
 
         int[] columns = assignColumns(states, indexByLabel);
-        Set<String> referencedLabels = referencedLabels(states);
 
         // --- 実ノード配置 ---
         int titleAreaHeight = layout.title.isEmpty() ? 0 : 52;
@@ -52,47 +54,75 @@ public class LayoutEngine {
             box.column = columns[i];
             box.width = theme.nodeWidth;
             box.height = nodeHeight(s.safeActions().size());
-            // basic-design.md 6.6: 出次数0かつ入次数0（どこからも参照されない）ノードのみ未接続扱い
-            box.isolated = s.safeActions().isEmpty() && !referencedLabels.contains(s.label);
             placeInColumn(box, nextYByColumn, topY);
             layout.nodes.add(box);
             boxes.put(s.label, box);
         }
+
+        // 迂回レーン（6.4.1）は実ノードより下を通す。複製ノードを足す前のこの時点の最下端を基準にする
+        int realNodesMaxBottom = 0;
+        for (Layout.NodeBox n : layout.nodes) {
+            realNodesMaxBottom = Math.max(realNodesMaxBottom, n.bottom());
+        }
+        int skipLaneIndex = 0;
 
         // --- エッジ（前進のみ）＋ 後退辺・自己ループの複製ノード ---
         for (StateSpec s : states) {
             Layout.NodeBox from = boxes.get(s.label);
             List<ActionSpec> actions = s.safeActions();
 
-            // 同じノードから出るエッジが縦の幹線で重なって描かれないよう、レーンをずらす（basic-design.md 6.4）
-            int edgeCount = (int) actions.stream().filter(a -> a.next != null && !a.next.isBlank()).count();
-            int lane = 0;
-
+            // まず終点（実ボックス／複製ノード）だけ確定させる（複製ノードはここで作る）。
+            // レーンの割り当ては後段でまとめて行う（basic-design.md 6.4）
+            List<EdgeCandidate> candidates = new ArrayList<>();
             for (int j = 0; j < actions.size(); j++) {
                 ActionSpec a = actions.get(j);
-                if (a.next == null || a.next.isBlank()) {
-                    continue;
-                }
-                Layout.NodeBox target = boxes.get(a.next);
                 int sx = from.right();
                 int sy = actionAnchorY(from, j);
+                for (String next : a.effectiveNextTargets()) {
+                    Layout.NodeBox target = boxes.get(next);
 
-                Layout.NodeBox to;
-                if (target.column > from.column) {
-                    to = target; // 前進: 実ボックスへ
-                } else {
-                    // 後退辺・自己ループ（basic-design.md 6.5）: 複製ノードを新規に右側へ配置
-                    to = cloneNode(target.state, from.column + 1, nextYByColumn, topY);
-                    layout.nodes.add(to);
+                    Layout.NodeBox to;
+                    boolean skipsColumns;
+                    if (target.column > from.column) {
+                        to = target; // 前進: 実ボックスへ
+                        skipsColumns = (target.column - from.column) > 1;
+                    } else {
+                        // 後退辺・自己ループ（basic-design.md 6.5）: 複製ノードを新規に右側へ配置
+                        to = cloneNode(target.state, from.column + 1, nextYByColumn, topY);
+                        layout.nodes.add(to);
+                        skipsColumns = false; // 複製は常に起点の隣の列
+                    }
+                    int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + theme.headerHeight / 2;
+
+                    if (skipsColumns) {
+                        // 6.4.1: 中間列のノードの背後を通らないよう、迂回レーンを経由させる
+                        int laneY = realNodesMaxBottom + SKIP_LANE_GAP + skipLaneIndex * SKIP_LANE_PITCH;
+                        skipLaneIndex++;
+                        Layout.EdgeRoute e = new Layout.EdgeRoute();
+                        e.fromStateLabel = s.label;
+                        routeSkip(e, sx, sy, to.x, ty, laneY, skipLaneIndex);
+                        e.arrowX = to.x;
+                        e.arrowY = ty;
+                        layout.edges.add(e);
+                    } else {
+                        candidates.add(new EdgeCandidate(sx, sy, to, ty));
+                    }
                 }
+            }
 
-                int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + theme.headerHeight / 2;
+            // 同じ起点から出る複数のエッジが縦の幹線で重なって描かれないよう、レーンをずらす（basic-design.md 6.4）。
+            // 非交差マッチングの定石: 終点yが大きい（下にある）ものほどレーン0（起点寄り＝内側）、
+            // 終点yが小さい（上にある）ものほどレーン番号を大きく（終点寄り＝外側）する。
+            // 逆順（yが小さい順にレーン0から）にすると、下のペアの水平区間が上のペアの垂直区間と交差する
+            candidates.sort(Comparator.comparingInt(EdgeCandidate::ty).reversed());
+            int laneCount = candidates.size();
+            for (int lane = 0; lane < laneCount; lane++) {
+                EdgeCandidate c = candidates.get(lane);
                 Layout.EdgeRoute e = new Layout.EdgeRoute();
                 e.fromStateLabel = s.label;
-                routeForward(e, sx, sy, to.x, ty, lane, edgeCount);
-                lane++;
-                e.arrowX = to.x;
-                e.arrowY = ty;
+                routeForward(e, c.sx(), c.sy(), c.to().x, c.ty(), lane, laneCount);
+                e.arrowX = c.to().x;
+                e.arrowY = c.ty();
                 layout.edges.add(e);
             }
         }
@@ -102,6 +132,10 @@ public class LayoutEngine {
         for (Layout.NodeBox n : layout.nodes) {
             maxRight = Math.max(maxRight, n.right());
             maxBottom = Math.max(maxBottom, n.bottom());
+        }
+        if (skipLaneIndex > 0) {
+            int lastLaneY = realNodesMaxBottom + SKIP_LANE_GAP + (skipLaneIndex - 1) * SKIP_LANE_PITCH;
+            maxBottom = Math.max(maxBottom, lastLaneY + SKIP_LANE_GAP);
         }
 
         int legend = Boolean.TRUE.equals(theme.showLegend) ? LEGEND_HEIGHT : 0;
@@ -127,22 +161,6 @@ public class LayoutEngine {
         int y = nextYByColumn.getOrDefault(box.column, topY);
         box.y = y;
         nextYByColumn.put(box.column, y + box.height + theme.rowGap);
-    }
-
-    /**
-     * 全 state の全 actions のうち、next で参照されている label の集合（basic-design.md 6.6）。
-     * 自己ループも含む（next == 自分自身でも「参照されている」扱い）。
-     */
-    private Set<String> referencedLabels(List<StateSpec> states) {
-        Set<String> refs = new HashSet<>();
-        for (StateSpec s : states) {
-            for (ActionSpec a : s.safeActions()) {
-                if (a.next != null && !a.next.isBlank()) {
-                    refs.add(a.next);
-                }
-            }
-        }
-        return refs;
     }
 
     /** ノード高さ（basic-design.md 6.1）。 */
@@ -175,12 +193,14 @@ public class LayoutEngine {
         }
         for (int i = 0; i < n; i++) {
             for (ActionSpec a : states.get(i).safeActions()) {
-                if (a.next == null || a.next.isBlank() || a.next.equals(states.get(i).label)) {
-                    continue;
-                }
-                Integer ti = indexByLabel.get(a.next);
-                if (ti != null && ti != i) {
-                    adj.get(i).add(ti);
+                for (String next : a.effectiveNextTargets()) {
+                    if (next.equals(states.get(i).label)) {
+                        continue; // 自己ループは列割り当てに使わない
+                    }
+                    Integer ti = indexByLabel.get(next);
+                    if (ti != null && ti != i) {
+                        adj.get(i).add(ti);
+                    }
                 }
             }
         }
@@ -295,19 +315,41 @@ public class LayoutEngine {
     }
 
     private static final int EDGE_LANE_STEP = 16;
+    private static final int SKIP_LANE_GAP = 20;
+    private static final int SKIP_LANE_PITCH = 14;
+    private static final int SKIP_LANE_STAGGER = 8;
     public static final int CLONE_TEXT_HEIGHT = 28;
 
+    /**
+     * 前進エッジの経路（basic-design.md 6.4）。折れ位置は終点寄り（v3.1）。
+     * 起点直後は各アクションの行の高さのまま水平に伸び、終点の手前で初めて縦に曲がることで、
+     * 同じ起点から出る複数のエッジが長い区間で重なるのを防ぐ。
+     */
     private void routeForward(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int lane, int laneCount) {
         if (sy == ty) {
             e.segments.add(Layout.Segment.h(sx, tx, sy));
             return;
         }
-        // 同じ起点から出る複数のエッジが縦の幹線で重ならないよう、レーンごとに x をずらす
+        int bendFromTarget = Math.max(16, theme.columnGap / 4);
         double center = (laneCount - 1) / 2.0;
-        int mx = sx + theme.columnGap / 2 + (int) Math.round((lane - center) * EDGE_LANE_STEP);
+        int mx = tx - bendFromTarget + (int) Math.round((lane - center) * EDGE_LANE_STEP);
         mx = Math.max(sx + 12, Math.min(mx, tx - 12));
         e.segments.add(Layout.Segment.h(sx, mx, sy));
         e.segments.add(Layout.Segment.v(sy, ty, mx));
         e.segments.add(Layout.Segment.h(mx, tx, ty));
+    }
+
+    /**
+     * 列を2つ以上飛び越すエッジの迂回経路（basic-design.md 6.4.1）。
+     * 中間列にあるノードの背後を通らないよう、すべての実ノードより下の迂回レーンを経由する。
+     */
+    private void routeSkip(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int laneY, int laneOrdinal) {
+        int outX = sx + 20 + laneOrdinal * SKIP_LANE_STAGGER;
+        int inX = tx - 20 - laneOrdinal * SKIP_LANE_STAGGER;
+        e.segments.add(Layout.Segment.h(sx, outX, sy));
+        e.segments.add(Layout.Segment.v(sy, laneY, outX));
+        e.segments.add(Layout.Segment.h(outX, inX, laneY));
+        e.segments.add(Layout.Segment.v(laneY, ty, inX));
+        e.segments.add(Layout.Segment.h(inX, tx, ty));
     }
 }

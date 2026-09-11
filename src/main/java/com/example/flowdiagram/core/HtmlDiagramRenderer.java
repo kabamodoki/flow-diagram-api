@@ -1,23 +1,33 @@
 package com.example.flowdiagram.core;
 
 import com.example.flowdiagram.model.ActionSpec;
+import com.example.flowdiagram.model.ActionTypeStyle;
+import com.example.flowdiagram.model.KindStyle;
 import com.example.flowdiagram.model.StateSpec;
 import com.example.flowdiagram.model.Theme;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * 図本体の HTML（div 構造）を組み立てる（basic-design.md 7章）。
+ * 図本体の HTML（div 構造）を組み立てる（basic-design.md 8章）。
  * 画像（SVG / PNG / canvas）は一切使わない。
+ * kind/type の色は {@link StyleRegistry} が解決した結果をそのままCSS化するだけで、
+ * このクラスは kind/type の意味を一切知らない。
  */
 public class HtmlDiagramRenderer {
 
     private final Theme theme;
+    private final Map<String, KindStyle> kindStyles;
+    private final Map<String, ActionTypeStyle> typeStyles;
 
-    public HtmlDiagramRenderer(Theme theme) {
+    public HtmlDiagramRenderer(Theme theme, Map<String, KindStyle> kindStyles,
+            Map<String, ActionTypeStyle> typeStyles) {
         this.theme = theme;
+        this.kindStyles = kindStyles;
+        this.typeStyles = typeStyles;
     }
 
     /** `<div class="fd-canvas">…</div>` を返す。 */
@@ -25,6 +35,8 @@ public class HtmlDiagramRenderer {
         StringBuilder sb = new StringBuilder(8192);
         sb.append("<div class=\"fd-canvas\" style=\"width:").append(layout.canvasWidth)
           .append("px;height:").append(layout.canvasHeight).append("px\">\n");
+
+        renderKindTypeCss(sb);
 
         if (!layout.title.isEmpty()) {
             sb.append("  <h1 class=\"diagram-title\" style=\"left:").append(theme.canvasPadding)
@@ -46,8 +58,43 @@ public class HtmlDiagramRenderer {
     }
 
     /**
+     * このリクエストで実際に使われている kind/type ごとに、色のCSSを出力する（basic-design.md 7章）。
+     * JSON の {@code kinds}/{@code types} と既定値をマージ済みの {@link #kindStyles}/{@link #typeStyles}
+     * をそのままCSS化する。キー文字列は {@link Html#labelToken} でハッシュ化してクラス名にする。
+     */
+    private void renderKindTypeCss(StringBuilder sb) {
+        sb.append("  <style>\n");
+        for (Map.Entry<String, KindStyle> e : kindStyles.entrySet()) {
+            String token = Html.labelToken(e.getKey());
+            KindStyle s = e.getValue();
+            sb.append("    .fd-canvas .node.kind-").append(token).append("{background:")
+              .append(Html.cssValue(s.background, "#fbfcfd")).append(";border-color:")
+              .append(Html.cssValue(s.border, "#c7ccd3")).append(";}\n");
+            sb.append("    .fd-canvas .node.kind-").append(token).append(" .node-header{background:")
+              .append(Html.cssValue(s.headerBackground, "#eef0f2")).append(";color:")
+              .append(Html.cssValue(s.textColor, "#4a5057")).append(";}\n");
+            sb.append("    .fd-canvas .node.kind-").append(token).append(" .kind-badge{color:")
+              .append(Html.cssValue(s.textColor, "#4a5057")).append(";}\n");
+        }
+        for (Map.Entry<String, ActionTypeStyle> e : typeStyles.entrySet()) {
+            String token = Html.labelToken(e.getKey());
+            ActionTypeStyle s = e.getValue();
+            sb.append("    .fd-canvas .action.type-").append(token).append("{background:")
+              .append(Html.cssValue(s.background, "#ffffff")).append(";color:")
+              .append(Html.cssValue(s.textColor, "#4a5057")).append(";border:")
+              .append(Html.px(s.borderWidth == null ? 1.5 : s.borderWidth)).append(" solid ")
+              .append(Html.cssValue(s.border, "#c7ccd3")).append(";");
+            if (s.shadow != null && !s.shadow.isBlank()) {
+                sb.append("box-shadow:").append(Html.cssValue(s.shadow, "none")).append(";");
+            }
+            sb.append("}\n");
+        }
+        sb.append("  </style>\n");
+    }
+
+    /**
      * 複製ボックスにカーソルを合わせたとき、対応する元のボックスも一緒に強調するための
-     * 図固有の CSS（basic-design.md 7章・v2.3）。JS は使わず `:has()` の前方兄弟参照で実現する。
+     * 図固有の CSS（basic-design.md 9章）。JS は使わず `:has()` の前方兄弟参照で実現する。
      * label をそのまま CSS 属性値に埋め込むと壊れうるため、{@link Html#labelToken} で
      * ハッシュ化したトークンをクラス名として使い、実際の label 文字列は CSS に出さない。
      */
@@ -74,12 +121,12 @@ public class HtmlDiagramRenderer {
         sb.append("  <div class=\"edge\" data-from=\"").append(Html.esc(e.fromStateLabel)).append("\">\n");
         for (Layout.Segment s : e.segments) {
             if (s.horizontal) {
-                sb.append("    <div class=\"seg h\" style=\"left:").append(s.x)
-                  .append("px;top:calc(").append(s.y).append("px - var(--edge-w) / 2);width:calc(")
+                sb.append("    <div class=\"seg h\" style=\"left:calc(").append(s.x)
+                  .append("px - var(--edge-w) / 2);top:calc(").append(s.y).append("px - var(--edge-w) / 2);width:calc(")
                   .append(s.width).append("px + var(--edge-w))\"></div>\n");
             } else {
                 sb.append("    <div class=\"seg v\" style=\"left:calc(").append(s.x)
-                  .append("px - var(--edge-w) / 2);top:").append(s.y).append("px;height:calc(")
+                  .append("px - var(--edge-w) / 2);top:calc(").append(s.y).append("px - var(--edge-w) / 2);height:calc(")
                   .append(s.height).append("px + var(--edge-w))\"></div>\n");
             }
         }
@@ -92,9 +139,8 @@ public class HtmlDiagramRenderer {
     private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {
         sb.append("  <div class=\"node-clone-ref lbl-").append(Html.labelToken(n.state.label))
           .append("\" style=\"left:").append(n.x).append("px;top:").append(n.y)
-          .append("px;width:").append(n.width).append("px\"")
-          .append(" title=\"").append(Html.esc(n.state.label + " と同じものです（ホバーで元のボックスを強調表示）")).append('"')
-          .append(">").append(Html.esc(n.state.label)).append("</div>\n");
+          .append("px;width:").append(n.width).append("px\">")
+          .append(Html.esc(n.state.label)).append("</div>\n");
     }
 
     private void renderNode(StringBuilder sb, Layout.NodeBox n) {
@@ -103,41 +149,29 @@ public class HtmlDiagramRenderer {
             return;
         }
         StateSpec s = n.state;
-        String kindClass = s.isProcedure() ? "k-procedure" : "k-status";
-        String badge = s.isProcedure() ? Palette.KIND_BADGE_LABEL_PROCEDURE : Palette.KIND_BADGE_LABEL_STATUS;
+        String kindClass = "kind-" + Html.labelToken(s.effectiveKind());
+        String badge = s.effectiveKind();
 
-        sb.append("  <div class=\"node ").append(kindClass);
-        if (n.isolated) {
-            sb.append(" is-unconnected");
-        }
-        sb.append(" lbl-").append(Html.labelToken(s.label))
+        sb.append("  <div class=\"node ").append(kindClass)
+          .append(" lbl-").append(Html.labelToken(s.label))
           .append("\" data-label=\"").append(Html.esc(s.label)).append('"');
-        if (n.isolated) {
-            sb.append(" data-unconnected=\"true\" title=\"")
-              .append(Html.esc("どこからも参照されておらず、遷移先も無いステータス/手続きです"))
-              .append('"');
-        }
         sb.append(" style=\"left:").append(n.x).append("px;top:").append(n.y)
           .append("px;width:").append(n.width).append("px;height:").append(n.height)
           .append("px\">\n");
 
         sb.append("    <div class=\"node-header\">")
-          .append("<span class=\"kind-badge\">").append(Html.esc(badge)).append("</span>");
-        if (n.isolated) {
-            sb.append("<span class=\"unconnected-badge\">")
-              .append(Html.esc(Palette.UNCONNECTED_BADGE_LABEL)).append("</span>");
-        }
-        sb.append("<span class=\"state-label\">").append(Html.esc(s.label)).append("</span>")
+          .append("<span class=\"kind-badge\">").append(Html.esc(badge)).append("</span>")
+          .append("<span class=\"state-label\">").append(Html.esc(s.label)).append("</span>")
           .append("</div>\n");
 
         List<ActionSpec> actions = s.safeActions();
         if (!actions.isEmpty()) {
             sb.append("    <div class=\"node-actions\">\n");
             for (ActionSpec a : actions) {
-                String typeClass = a.isFlow() ? "a-flow" : "a-button";
+                String typeClass = "type-" + Html.labelToken(a.effectiveType());
                 sb.append("      <div class=\"action ").append(typeClass).append("\">")
                   .append("<span class=\"action-label\">").append(Html.esc(a.label)).append("</span>");
-                if (a.next != null && !a.next.isBlank()) {
+                if (!a.effectiveNextTargets().isEmpty()) {
                     sb.append("<span class=\"chev\">&rsaquo;</span>");
                 }
                 sb.append("</div>\n");
@@ -147,24 +181,29 @@ public class HtmlDiagramRenderer {
         sb.append("  </div>\n");
     }
 
+    /** 実際に使われている kind/type を動的に列挙する（basic-design.md 8章）。 */
     private void renderLegend(StringBuilder sb, Layout layout) {
         if (!Boolean.TRUE.equals(theme.showLegend)) {
             return;
         }
         int top = layout.canvasHeight - theme.canvasPadding - 20;
         sb.append("  <div class=\"legend\" style=\"left:").append(theme.canvasPadding)
-          .append("px;top:").append(top).append("px\">\n")
-          .append("    <span class=\"item\"><span class=\"swatch status\"></span>")
-          .append(Palette.KIND_BADGE_LABEL_STATUS).append("</span>\n")
-          .append("    <span class=\"item\"><span class=\"swatch procedure\"></span>")
-          .append(Palette.KIND_BADGE_LABEL_PROCEDURE).append("</span>\n")
-          .append("    <span class=\"item\"><span class=\"chip button\"></span>ボタン</span>\n")
-          .append("    <span class=\"item\"><span class=\"chip flow\"></span>フロー</span>\n")
-          .append("    <span class=\"item\"><span class=\"bar\"></span>遷移</span>\n");
-        boolean anyIsolated = layout.nodes.stream().anyMatch(n -> n.isolated);
-        if (anyIsolated) {
-            sb.append("    <span class=\"item\"><span class=\"swatch unconnected\"></span>未接続（点線）</span>\n");
+          .append("px;top:").append(top).append("px\">\n");
+
+        for (Map.Entry<String, KindStyle> e : kindStyles.entrySet()) {
+            KindStyle s = e.getValue();
+            sb.append("    <span class=\"item\"><span class=\"swatch\" style=\"background:")
+              .append(Html.cssValue(s.headerBackground, "#eef0f2")).append("\"></span>")
+              .append(Html.esc(e.getKey())).append("</span>\n");
         }
+        for (Map.Entry<String, ActionTypeStyle> e : typeStyles.entrySet()) {
+            ActionTypeStyle s = e.getValue();
+            sb.append("    <span class=\"item\"><span class=\"chip\" style=\"background:")
+              .append(Html.cssValue(s.background, "#ffffff")).append(";border-color:")
+              .append(Html.cssValue(s.border, "#c7ccd3")).append("\"></span>")
+              .append(Html.esc(e.getKey())).append("</span>\n");
+        }
+        sb.append("    <span class=\"item\"><span class=\"bar\"></span>遷移</span>\n");
         sb.append("  </div>\n");
     }
 }

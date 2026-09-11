@@ -20,8 +20,6 @@ public class Layout {
         public int height;
         /** true の場合、state.actions に関わらずアクションを描画しない（basic-design.md 6.5）。 */
         public boolean clone;
-        /** 入次数・出次数がともに0（basic-design.md 6.6）。複製ノードでは常に false。 */
-        public boolean isolated;
 
         public int right() {
             return x + width;

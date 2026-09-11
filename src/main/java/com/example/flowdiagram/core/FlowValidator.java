@@ -47,9 +47,11 @@ public final class FlowValidator {
                     errors.add("states[" + i + "].actions[" + j + "].label は必須です"); // V-04
                     continue;
                 }
-                if (a.next != null && !a.next.isBlank() && !labels.contains(a.next)) {
-                    errors.add("states[" + i + "].actions[" + j + "].next が存在しないlabelを指しています: "
-                            + a.next); // V-05
+                for (String next : a.effectiveNextTargets()) {
+                    if (!labels.contains(next)) {
+                        errors.add("states[" + i + "].actions[" + j + "].next が存在しないlabelを指しています: "
+                                + next); // V-05
+                    }
                 }
             }
         }

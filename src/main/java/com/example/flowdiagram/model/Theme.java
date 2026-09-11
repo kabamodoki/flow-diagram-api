@@ -54,7 +54,7 @@ public class Theme {
         t.background = "#f7f8fa";
         t.titleColor = "#1f2933";
         t.nodeShadow = "0 2px 6px rgba(0,0,0,.10)";
-        t.edgeWidth = 2;
+        t.edgeWidth = 3;
         t.arrowSize = 9;
         t.showLegend = Boolean.TRUE;
         return t;

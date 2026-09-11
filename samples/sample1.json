@@ -1,19 +1,26 @@
 {
   "title": "サンプル1（ボタン型）",
+  "kinds": {
+    "ステータス": { "headerBackground": "#eaf4ff", "background": "#f8fbfe", "border": "#cfe3f5", "textColor": "#2c6291" },
+    "手続き":     { "headerBackground": "#eaf8ee", "background": "#f8fcf9", "border": "#cdeada", "textColor": "#2f7a52" }
+  },
+  "types": {
+    "button": { "background": "#ffffff", "border": "#c4c9d0", "borderWidth": 1.5, "textColor": "#2d3748", "shadow": "0 1px 2px rgba(15,23,42,.10)" },
+    "flow":   { "background": "#f8fbfe", "border": "#7fb8ee", "borderWidth": 1.5, "textColor": "#2c6291" }
+  },
   "states": [
     {
       "label": "ステータスA",
-      "kind": "status",
+      "kind": "ステータス",
       "actions": [
         { "type": "button", "label": "ボタン1", "next": "ステータスB" },
-        { "type": "button", "label": "ボタン2", "next": "ステータスE" },
-        { "type": "button", "label": "ボタン3", "next": "ステータスF" },
-        { "type": "button", "label": "ボタン4", "next": "ステータスG" }
+        { "type": "button", "label": "ボタン2", "next": "ステータスX" },
+        { "type": "button", "label": "ボタン3", "next": "ステータスY" }
       ]
     },
     {
       "label": "ステータスB",
-      "kind": "status",
+      "kind": "ステータス",
       "actions": [
         { "type": "button", "label": "次へ", "next": "ステータスC" },
         { "type": "button", "label": "Aに戻る", "next": "ステータスA" }
@@ -21,16 +28,15 @@
     },
     {
       "label": "ステータスC",
-      "kind": "status",
+      "kind": "ステータス",
       "actions": [
-        { "type": "button", "label": "次へ", "next": "ステータスD" },
-        { "type": "button", "label": "Aに戻る", "next": "ステータスA" }
+        { "type": "button", "label": "次へ", "next": ["手続き1", "ステータスD"] },
+        { "type": "button", "label": "Bに戻る", "next": "ステータスB" }
       ]
     },
-    { "label": "ステータスD", "kind": "procedure" },
-    { "label": "ステータスE", "kind": "status" },
-    { "label": "ステータスF", "kind": "status" },
-    { "label": "ステータスG", "kind": "status" },
-    { "label": "ステータスZ", "kind": "status" }
+    { "label": "ステータスX", "kind": "ステータス" },
+    { "label": "ステータスY", "kind": "ステータス" },
+    { "label": "手続き1", "kind": "手続き" },
+    { "label": "ステータスD", "kind": "ステータス" }
   ]
 }

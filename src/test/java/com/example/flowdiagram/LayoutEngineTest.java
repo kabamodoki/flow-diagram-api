@@ -174,38 +174,88 @@ class LayoutEngineTest {
     }
 
     @Test
-    void fullyDisconnectedNodeIsIsolated() {
-        // basic-design.md 6.6: どこからも参照されず、自身にもアクションが無いノードのみ isolated
-        Map<String, Layout.NodeBox> n = realNodes(spec(
-                state("a", go("x", "b")),
-                state("b"),
-                state("lonely")));
-        assertTrue(n.get("lonely").isolated, "誰からも参照されずアクションも無いので未接続");
+    void bendPointIsNearTargetNotNearSource() {
+        // basic-design.md 6.4 v3.1: 折れ位置は終点寄り（tx - max(16, columnGap/4) 付近）
+        Layout l = buildLayout(spec(state("a", go("x", "b")), state("b")));
+        Layout.EdgeRoute e = l.edges.get(0);
+        Layout.NodeBox a = l.nodeByLabel().get("a");
+        Layout.NodeBox b = l.nodeByLabel().get("b");
+        assertEquals(3, e.segments.size());
+        // 中間の垂直セグメントのxが、起点右端付近ではなく終点左端付近にあること
+        Layout.Segment vertical = e.segments.stream().filter(s -> !s.horizontal).findFirst().orElseThrow();
+        int distFromSource = vertical.x - a.right();
+        int distFromTarget = b.x - vertical.x;
+        assertTrue(distFromTarget < distFromSource, "折れ位置は起点よりも終点に近いこと");
     }
 
     @Test
-    void terminalNodeReachedByAnEdgeIsNotIsolated() {
-        // 通常の終端（矢印で繋がっている）は isolated ではない
-        Map<String, Layout.NodeBox> n = realNodes(spec(
-                state("a", go("x", "b")),
-                state("b")));
-        assertFalse(n.get("b").isolated, "aから参照されているので未接続ではない");
-        assertFalse(n.get("a").isolated, "bへのアクションを持つので未接続ではない");
-    }
-
-    @Test
-    void selfLoopingNodeIsNotIsolated() {
-        // 自己ループは自分自身を参照している扱いなので isolated にはならない
-        Map<String, Layout.NodeBox> n = realNodes(spec(state("a", go("retry", "a"))));
-        assertFalse(n.get("a").isolated);
-    }
-
-    @Test
-    void cloneNodeIsNeverIsolated() {
+    void oneActionWithMultipleNextTargetsProducesMultipleEdges() {
+        // basic-design.md 3.3/6.4 v3.1: 1つのアクションから複数の矢印を出せる
         Layout l = buildLayout(spec(
-                state("a", go("x", "b")),
-                state("b", go("back", "a"))));
-        Layout.NodeBox clone = l.nodes.stream().filter(box -> box.clone).findFirst().orElseThrow();
-        assertFalse(clone.isolated, "複製ノードは何かから参照された結果なので未接続にはならない");
+                state("a", new ActionSpec("button", "go", List.of("b", "c"))),
+                state("b"),
+                state("c")));
+        long fromA = l.edges.stream().filter(e -> e.fromStateLabel.equals("a")).count();
+        assertEquals(2, fromA, "1つのアクションのnextが2件なら2本のエッジになる");
+    }
+
+    @Test
+    void multipleNextTargetsCanMixForwardAndBackward() {
+        // 1つのアクションの複数next のうち、一方は前進・もう一方は後退（複製化）でもよい
+        Layout l = buildLayout(spec(
+                state("a", new ActionSpec("button", "go", List.of("a", "b"))), // 自己ループ + 前進
+                state("b")));
+        long cloneCount = l.nodes.stream().filter(n -> n.clone).count();
+        assertEquals(1, cloneCount, "自己ループ側だけ複製ノードになる");
+        long fromA = l.edges.stream().filter(e -> e.fromStateLabel.equals("a")).count();
+        assertEquals(2, fromA);
+    }
+
+    @Test
+    void edgeSkippingTwoOrMoreColumnsUsesDetourBelowAllNodes() {
+        // basic-design.md 6.4.1 v3.2: a→d は a(col0)→b(col1)→c(col2)→d(col3) を飛び越すので、
+        // 中間列(b,c)の高さを通らない迂回経路（実ノード最下端より下の5セグメント）になる
+        Layout l = buildLayout(spec(
+                state("a", go("skip", "d"), go("x", "b")),
+                state("b", go("y", "c")),
+                state("c", go("z", "d")),
+                state("d")));
+        Layout.EdgeRoute skip = l.edges.stream()
+                .filter(e -> e.fromStateLabel.equals("a") && e.segments.size() == 5)
+                .findFirst().orElseThrow();
+
+        int realNodesMaxBottom = l.nodes.stream()
+                .filter(n -> !n.clone).mapToInt(Layout.NodeBox::bottom).max().orElseThrow();
+        Layout.Segment detourLane = skip.segments.stream()
+                .filter(s -> s.horizontal).skip(1).findFirst().orElseThrow();
+        assertTrue(detourLane.y > realNodesMaxBottom, "迂回レーンはどの実ノードよりも下を通ること");
+    }
+
+    @Test
+    void laneOrderIsNonCrossingByTargetY() {
+        // basic-design.md 6.4 v3.3: 非交差マッチングの定石により、終点yが小さい（上にある）ほど
+        // レーンは終点寄り（mxが大きい）、終点yが大きい（下にある）ほど起点寄り（mxが小さい）になる
+        Layout l = buildLayout(spec(
+                state("a", go("toLower", "g"), go("toUpper", "e")),
+                state("b"), state("c"), state("d"),
+                state("e"), state("f"), state("g")));
+        Layout.NodeBox e = l.nodeByLabel().get("e");
+        Layout.NodeBox g = l.nodeByLabel().get("g");
+        assertTrue(e.y < g.y, "テスト前提: eはgより上に積まれる");
+
+        Layout.EdgeRoute toE = l.edges.stream().filter(r -> r.arrowY == e.y + theme.headerHeight / 2)
+                .findFirst().orElseThrow();
+        Layout.EdgeRoute toG = l.edges.stream().filter(r -> r.arrowY == g.y + theme.headerHeight / 2)
+                .findFirst().orElseThrow();
+        Layout.Segment mxE = toE.segments.stream().filter(s -> !s.horizontal).findFirst().orElseThrow();
+        Layout.Segment mxG = toG.segments.stream().filter(s -> !s.horizontal).findFirst().orElseThrow();
+        assertTrue(mxE.x > mxG.x, "上にある終点(e)の方がレーンのxは大きい（終点寄り）こと。逆だと交差する");
+    }
+
+    @Test
+    void adjacentColumnEdgeDoesNotUseDetour() {
+        // 隣の列（1列だけ）へのエッジは通常の3セグメント経路のまま
+        Layout l = buildLayout(spec(state("a", go("x", "b")), state("b")));
+        assertTrue(l.edges.stream().noneMatch(e -> e.segments.size() == 5));
     }
 }

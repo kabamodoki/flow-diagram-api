@@ -57,7 +57,7 @@ class FlowValidatorTest {
 
     @Test
     void v04_actionLabelBlank() {
-        FlowSpec s = spec(state("a", new ActionSpec("button", "  ", null)));
+        FlowSpec s = spec(state("a", new ActionSpec("button", "  ", (String) null)));
         FlowDiagramException e = assertThrows(FlowDiagramException.class, () -> FlowValidator.validate(s));
         assertTrue(e.getMessages().contains("states[0].actions[0].label は必須です"));
     }
@@ -74,7 +74,7 @@ class FlowValidatorTest {
     void collectsAllViolationsAtOnce() {
         FlowSpec s = spec(
                 state("a", new ActionSpec("button", "go", "nope")),
-                state("a", new ActionSpec("button", null, null)));
+                state("a", new ActionSpec("button", null, (String) null)));
         FlowDiagramException e = assertThrows(FlowDiagramException.class, () -> FlowValidator.validate(s));
         assertEquals(3, e.getMessages().size(), () -> "実際: " + e.getMessages());
     }

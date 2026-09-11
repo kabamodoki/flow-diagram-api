@@ -1,23 +1,31 @@
 {
   "title": "サンプル2（フロー型）",
+  "kinds": {
+    "ステータス": { "headerBackground": "#eaf4ff", "background": "#f8fbfe", "border": "#cfe3f5", "textColor": "#2c6291" },
+    "手続き":     { "headerBackground": "#eaf8ee", "background": "#f8fcf9", "border": "#cdeada", "textColor": "#2f7a52" }
+  },
+  "types": {
+    "button": { "background": "#ffffff", "border": "#c4c9d0", "borderWidth": 1.5, "textColor": "#2d3748", "shadow": "0 1px 2px rgba(15,23,42,.10)" },
+    "flow":   { "background": "#f8fbfe", "border": "#7fb8ee", "borderWidth": 1.5, "textColor": "#2c6291" }
+  },
   "states": [
     {
       "label": "手続きA",
-      "kind": "procedure",
+      "kind": "手続き",
       "actions": [
         { "type": "flow", "label": "フロー1", "next": "手続きB" }
       ]
     },
     {
       "label": "手続きB",
-      "kind": "procedure",
+      "kind": "手続き",
       "actions": [
         { "type": "flow", "label": "フロー2", "next": "手続きC" }
       ]
     },
     {
       "label": "手続きC",
-      "kind": "procedure",
+      "kind": "手続き",
       "actions": [
         { "type": "flow", "label": "フロー3", "next": "手続きD" },
         { "type": "flow", "label": "フロー4" },
@@ -26,6 +34,6 @@
         { "type": "flow", "label": "フロー7" }
       ]
     },
-    { "label": "手続きD", "kind": "procedure" }
+    { "label": "手続きD", "kind": "手続き" }
   ]
 }
