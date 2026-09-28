@@ -17,7 +17,7 @@ import java.util.Map;
 /** 座標計算（basic-design.md 6章）。 */
 public class LayoutEngine {
 
-    private static final int LEGEND_HEIGHT = 56;
+    private static final int LEGEND_HEIGHT = 76;
 
     /** 確定済みの終点を持つエッジ候補（basic-design.md 6.4のレーン割り当て用）。 */
     private record EdgeCandidate(int sx, int sy, Layout.NodeBox to, int ty) {

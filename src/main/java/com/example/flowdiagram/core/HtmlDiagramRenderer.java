@@ -254,5 +254,14 @@ public class HtmlDiagramRenderer {
         }
         sb.append("    <span class=\"item\"><span class=\"bar\"></span>遷移</span>\n");
         sb.append("  </div>\n");
+
+        int hintTop = top + LEGEND_HINT_OFFSET;
+        sb.append("  <div class=\"legend-hint\" style=\"left:").append(theme.canvasPadding)
+          .append("px;top:").append(hintTop).append("px\">")
+          .append(Html.esc(LEGEND_HINT_TEXT)).append("</div>\n");
     }
+
+    private static final String LEGEND_HINT_TEXT =
+            "変更を反映するには再度プレビューボタンを押してプレビューを生成してください";
+    private static final int LEGEND_HINT_OFFSET = 24;
 }

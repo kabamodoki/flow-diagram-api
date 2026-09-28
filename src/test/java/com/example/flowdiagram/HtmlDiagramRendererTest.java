@@ -231,6 +231,25 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void legendShowsReRenderHint() {
+        // basic-design.md v3.9: 凡例の直下に、変更を反映するには再度プレビューを押す必要がある旨の
+        // 注記を出す（ユーザー指示）
+        String html = renderCanvas(sample());
+        assertTrue(html.contains("legend-hint"));
+        assertTrue(html.contains("変更を反映するには再度プレビューボタンを押してプレビューを生成してください"));
+    }
+
+    @Test
+    void legendHintFollowsShowLegendFlag() {
+        FlowSpec spec = sample();
+        spec.theme = new Theme();
+        spec.theme.showLegend = false;
+        String html = renderCanvas(spec);
+        assertFalse(html.contains("legend-hint"), "凡例を出さない設定なら注記も出さないこと");
+        assertFalse(html.contains("変更を反映するには"));
+    }
+
+    @Test
     void noCloneNoHighlightStyleBlock() {
         FlowSpec spec = new FlowSpec();
         spec.title = "no-clone";
