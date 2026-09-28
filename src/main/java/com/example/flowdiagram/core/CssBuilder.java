@@ -105,7 +105,7 @@ public class CssBuilder {
                 .fd-canvas .legend .bar{display:inline-block;width:26px;\
                 border-top:var(--edge-w) solid var(--edge-color);}
                 .fd-canvas .legend-hint{position:absolute;font-size:var(--action-font-size);\
-                color:#a0aec0;font-style:italic;}
+                color:#718096;font-style:italic;}
                 """);
     }
 }
