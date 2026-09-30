@@ -1,11 +1,11 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.model.StyleRegistry;
-import com.example.flowdiagram.model.ActionSpec;
-import com.example.flowdiagram.model.ActionTypeStyle;
-import com.example.flowdiagram.model.FlowSpec;
-import com.example.flowdiagram.model.KindStyle;
-import com.example.flowdiagram.model.StateSpec;
+import com.example.flowdiagram.model.DiagramService.StyleRegistry;
+import com.example.flowdiagram.model.DiagramService.ActionSpec;
+import com.example.flowdiagram.model.DiagramService.ActionTypeStyle;
+import com.example.flowdiagram.model.DiagramService.FlowSpec;
+import com.example.flowdiagram.model.DiagramService.KindStyle;
+import com.example.flowdiagram.model.DiagramService.StateSpec;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

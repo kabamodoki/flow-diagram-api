@@ -1,19 +1,19 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.model.CssBuilder;
-import com.example.flowdiagram.model.Html;
-import com.example.flowdiagram.model.HtmlDiagramRenderer;
-import com.example.flowdiagram.model.HtmlPageWriter;
-import com.example.flowdiagram.model.Layout;
-import com.example.flowdiagram.model.LayoutEngine;
-import com.example.flowdiagram.model.Palette;
-import com.example.flowdiagram.model.StyleRegistry;
-import com.example.flowdiagram.model.ActionSpec;
-import com.example.flowdiagram.model.ActionTypeStyle;
-import com.example.flowdiagram.model.FlowSpec;
-import com.example.flowdiagram.model.KindStyle;
-import com.example.flowdiagram.model.StateSpec;
-import com.example.flowdiagram.model.Theme;
+import com.example.flowdiagram.model.DiagramService.CssBuilder;
+import com.example.flowdiagram.model.DiagramService.Html;
+import com.example.flowdiagram.model.DiagramService.HtmlDiagramRenderer;
+import com.example.flowdiagram.model.DiagramService.HtmlPageWriter;
+import com.example.flowdiagram.model.DiagramService.Layout;
+import com.example.flowdiagram.model.DiagramService.LayoutEngine;
+import com.example.flowdiagram.model.DiagramService.Palette;
+import com.example.flowdiagram.model.DiagramService.StyleRegistry;
+import com.example.flowdiagram.model.DiagramService.ActionSpec;
+import com.example.flowdiagram.model.DiagramService.ActionTypeStyle;
+import com.example.flowdiagram.model.DiagramService.FlowSpec;
+import com.example.flowdiagram.model.DiagramService.KindStyle;
+import com.example.flowdiagram.model.DiagramService.StateSpec;
+import com.example.flowdiagram.model.DiagramService.Theme;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
