@@ -1,4 +1,4 @@
-package com.example.flowdiagram.web;
+package com.example.flowdiagram.api;
 
 import com.example.flowdiagram.FlowDiagramException;
 import org.springframework.http.HttpStatus;
@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,13 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> onValidation(FlowDiagramException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", "VALIDATION_ERROR", "messages", e.getMessages()));
+    }
+
+    /** プレビュー画面（v3.11で廃止）等、存在しない静的リソースへのアクセスは素直に404にする。 */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> onNoResource(NoResourceFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "NOT_FOUND", "messages", List.of("APIのみ提供しています")));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

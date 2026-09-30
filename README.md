@@ -15,8 +15,7 @@ APIは「渡された定義に従って描画する」処理に徹し、設定�
 mvn spring-boot:run
 ```
 
-ブラウザで <http://localhost:8080/> を開くと、左に JSON、右にリアルタイムプレビューの画面が出る
-（「サンプル1」「サンプル2」ボタンでサンプルを読み込める）。
+動作確認用のプレビュー画面は無く、API のみを提供する。
 
 ```bash
 # 1枚もののHTMLを取得
@@ -34,7 +33,6 @@ curl -X POST http://localhost:8080/api/diagram \
 | GET | `/api/sample` | サンプル1と同内容（後方互換） |
 | GET | `/api/sample/1` | サンプル1のJSON（ボタン型。`kinds`/`types`定義入り。1アクションから複数遷移の実例入り） |
 | GET | `/api/sample/2` | サンプル2のJSON（フロー型。`kinds`/`types`定義入り） |
-| GET | `/` | プレビュー画面 |
 
 エラー時は 400 と `{"error":"VALIDATION_ERROR","messages":[...]}`。違反は全件まとめて返る。
 
@@ -144,7 +142,7 @@ curl -X POST http://localhost:8080/api/diagram \
 
 ### 関係線の色: ソースコードの `Palette` クラス
 kind/typeに属さない、図全体で共通の色（関係線）だけは、
-あえて JSON の対象から外し `src/main/java/com/example/flowdiagram/core/Palette.java` に置いている。
+あえて JSON の対象から外し `src/main/java/com/example/flowdiagram/model/Palette.java` に置いている。
 
 ```java
 public static final String EDGE_COLOR = "#7fb8ee";          // すべての関係線（薄い青の実線）

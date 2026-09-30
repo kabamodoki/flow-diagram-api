@@ -1,6 +1,5 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
-import com.example.flowdiagram.model.Theme;
 
 /**
  * テーマから CSS を組み立てる（basic-design.md 4章・8章）。

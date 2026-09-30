@@ -1,4 +1,4 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
 import java.util.Locale;
 

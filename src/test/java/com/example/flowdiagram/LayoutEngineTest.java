@@ -1,7 +1,7 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.core.Layout;
-import com.example.flowdiagram.core.LayoutEngine;
+import com.example.flowdiagram.model.Layout;
+import com.example.flowdiagram.model.LayoutEngine;
 import com.example.flowdiagram.model.ActionSpec;
 import com.example.flowdiagram.model.FlowSpec;
 import com.example.flowdiagram.model.StateSpec;

@@ -1,8 +1,5 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +8,6 @@ import java.util.List;
  * {@code type} は固定enumではなく任意の文字列（basic-design.md v3.0）。
  * 見た目は JSON ルートの {@code types} 定義で決まり、このクラスは意味を持たない。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ActionSpec {
 
     /** 未指定時に使う内部キー（basic-design.md 3.7）。 */
@@ -28,7 +24,6 @@ public class ActionSpec {
      * JSON では単一の文字列でも配列でも受け付ける（単一値は自動的に1件の配列になる）。
      * 1つのアクションから複数の矢印を出したい場合は配列で複数指定する。
      */
-    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     public List<String> next;
 
     public ActionSpec() {

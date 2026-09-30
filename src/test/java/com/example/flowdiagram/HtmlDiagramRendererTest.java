@@ -1,13 +1,13 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.core.CssBuilder;
-import com.example.flowdiagram.core.Html;
-import com.example.flowdiagram.core.HtmlDiagramRenderer;
-import com.example.flowdiagram.core.HtmlPageWriter;
-import com.example.flowdiagram.core.Layout;
-import com.example.flowdiagram.core.LayoutEngine;
-import com.example.flowdiagram.core.Palette;
-import com.example.flowdiagram.core.StyleRegistry;
+import com.example.flowdiagram.model.CssBuilder;
+import com.example.flowdiagram.model.Html;
+import com.example.flowdiagram.model.HtmlDiagramRenderer;
+import com.example.flowdiagram.model.HtmlPageWriter;
+import com.example.flowdiagram.model.Layout;
+import com.example.flowdiagram.model.LayoutEngine;
+import com.example.flowdiagram.model.Palette;
+import com.example.flowdiagram.model.StyleRegistry;
 import com.example.flowdiagram.model.ActionSpec;
 import com.example.flowdiagram.model.ActionTypeStyle;
 import com.example.flowdiagram.model.FlowSpec;

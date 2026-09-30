@@ -1,4 +1,4 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
 /**
  * kind/type に紐付かない、図全体で共通の色定義（basic-design.md 6.7章）。

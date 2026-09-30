@@ -1,10 +1,5 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
-import com.example.flowdiagram.model.ActionSpec;
-import com.example.flowdiagram.model.ActionTypeStyle;
-import com.example.flowdiagram.model.KindStyle;
-import com.example.flowdiagram.model.StateSpec;
-import com.example.flowdiagram.model.Theme;
 
 import java.util.LinkedHashSet;
 import java.util.List;

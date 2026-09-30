@@ -1,6 +1,6 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.core.StyleRegistry;
+import com.example.flowdiagram.model.StyleRegistry;
 import com.example.flowdiagram.model.ActionSpec;
 import com.example.flowdiagram.model.ActionTypeStyle;
 import com.example.flowdiagram.model.FlowSpec;

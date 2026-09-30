@@ -1,12 +1,9 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * アクション（type）の見た目定義（basic-design.md 3.6章）。
- * 全フィールド任意。JSON の {@code types} オブジェクトの値として渡される。
+ * 全フィールド任意。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ActionTypeStyle {
 
     public String background;

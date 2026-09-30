@@ -1,67 +1,30 @@
-package com.example.flowdiagram.web;
+package com.example.flowdiagram.model;
 
-import com.example.flowdiagram.core.CssBuilder;
-import com.example.flowdiagram.core.FlowValidator;
-import com.example.flowdiagram.core.HtmlDiagramRenderer;
-import com.example.flowdiagram.core.HtmlPageWriter;
-import com.example.flowdiagram.core.Layout;
-import com.example.flowdiagram.core.LayoutEngine;
-import com.example.flowdiagram.core.StyleRegistry;
-import com.example.flowdiagram.model.ActionSpec;
-import com.example.flowdiagram.model.ActionTypeStyle;
-import com.example.flowdiagram.model.FlowSpec;
-import com.example.flowdiagram.model.KindStyle;
-import com.example.flowdiagram.model.StateSpec;
-import com.example.flowdiagram.model.Theme;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** API（basic-design.md 10章）。 */
-@RestController
-public class DiagramController {
+/**
+ * 図の生成に関する処理を全て行う model 層のサービス（検証・レイアウト計算・スタイル解決・
+ * HTML/CSS描画・ページ組み立て）。API層（{@code com.example.flowdiagram.api}）はこのクラスを
+ * 呼び出すだけで、ここに書かれた処理の内容を知らない。
+ */
+@Service
+public class DiagramService {
 
-    private static final String HTML = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8";
-
-    @PostMapping(path = "/api/diagram", produces = HTML)
-    public ResponseEntity<String> diagram(@RequestBody FlowSpec spec) {
+    /** ブラウザでそのまま開ける完結した HTML を返す。 */
+    public String renderPage(FlowSpec spec) {
         Rendered r = render(spec);
-        return ResponseEntity.ok()
-                .header("Content-Type", HTML)
-                .body(r.writer.page(spec.displayTitle(), r.css, r.canvas));
+        return r.writer.page(spec.displayTitle(), r.css, r.canvas);
     }
 
-    @PostMapping(path = "/api/diagram/fragment", produces = HTML)
-    public ResponseEntity<String> fragment(@RequestBody FlowSpec spec) {
+    /** 既存ページへの埋め込み用の HTML 断片を返す。 */
+    public String renderFragment(FlowSpec spec) {
         Rendered r = render(spec);
-        return ResponseEntity.ok()
-                .header("Content-Type", HTML)
-                .body(r.writer.fragment(r.css, r.canvas));
+        return r.writer.fragment(r.css, r.canvas);
     }
-
-    @GetMapping(path = "/api/sample", produces = MediaType.APPLICATION_JSON_VALUE)
-    public FlowSpec sample() {
-        return sampleSpec();
-    }
-
-    @GetMapping(path = "/api/sample/1", produces = MediaType.APPLICATION_JSON_VALUE)
-    public FlowSpec sample1() {
-        return sampleSpec();
-    }
-
-    @GetMapping(path = "/api/sample/2", produces = MediaType.APPLICATION_JSON_VALUE)
-    public FlowSpec sample2() {
-        return sample2Spec();
-    }
-
-    // --- 内部 ---
 
     private record Rendered(String css, String canvas, HtmlPageWriter writer) {
     }
@@ -77,7 +40,9 @@ public class DiagramController {
         return new Rendered(css, canvas, new HtmlPageWriter(theme));
     }
 
-    static FlowSpec sampleSpec() {
+    // --- サンプルデータ ---
+
+    public FlowSpec sampleSpec() {
         FlowSpec spec = new FlowSpec();
         spec.title = "サンプル1（ボタン型）";
         spec.kinds = defaultKinds();
@@ -112,7 +77,7 @@ public class DiagramController {
         return spec;
     }
 
-    static FlowSpec sample2Spec() {
+    public FlowSpec sample2Spec() {
         FlowSpec spec = new FlowSpec();
         spec.title = "サンプル2（フロー型）";
         spec.kinds = defaultKinds();

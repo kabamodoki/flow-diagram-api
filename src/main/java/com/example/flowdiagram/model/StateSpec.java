@@ -1,7 +1,5 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +9,6 @@ import java.util.List;
  * {@code kind} は固定enumではなく任意の文字列（basic-design.md v3.0）。
  * 見た目は JSON ルートの {@code kinds} 定義で決まり、このクラスは意味を持たない。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class StateSpec {
 
     /** 未指定時に使う内部キー（basic-design.md 3.7）。 */

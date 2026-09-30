@@ -1,6 +1,5 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
-import com.example.flowdiagram.model.StateSpec;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

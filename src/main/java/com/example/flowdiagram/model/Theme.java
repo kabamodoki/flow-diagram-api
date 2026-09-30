@@ -1,13 +1,10 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * レイアウト・タイポグラフィの設定（basic-design.md 4章）。
- * 色はここに含まれない。配色は {@link com.example.flowdiagram.core.Palette} の
+ * 色はここに含まれない。配色は {@link Palette} の
  * ソースコード上の定数が唯一の情報源であり、JSON からは変更できない（ユーザー指示）。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Theme {
 
     // --- 4.1 レイアウト系 ---

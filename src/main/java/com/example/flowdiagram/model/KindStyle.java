@@ -1,13 +1,9 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * 大枠（kind）の見た目定義（basic-design.md 3.5章）。
- * 全フィールド任意。JSON の {@code kinds} オブジェクトの値として渡される。
- * プログラム側は kind の意味を一切知らず、ここに書かれた色をそのまま使うだけ。
+ * 全フィールド任意。プログラム側は kind の意味を一切知らず、ここに書かれた色をそのまま使うだけ。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class KindStyle {
 
     public String headerBackground;

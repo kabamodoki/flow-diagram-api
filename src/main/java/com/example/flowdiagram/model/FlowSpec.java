@@ -1,13 +1,14 @@
 package com.example.flowdiagram.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** 入力 JSON のルート（basic-design.md 3.1）。 */
-@JsonIgnoreProperties(ignoreUnknown = true)
+/**
+ * 図の内部表現のルート（basic-design.md 3.1）。
+ * JSONの入出力形式は {@link com.example.flowdiagram.api.entity.FlowSpecEntity} が持ち、
+ * このクラスは model 層の処理（検証・レイアウト・描画）だけに使う。
+ */
 public class FlowSpec {
 
     public String title;

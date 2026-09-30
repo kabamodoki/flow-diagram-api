@@ -1,6 +1,6 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.core.FlowValidator;
+import com.example.flowdiagram.model.FlowValidator;
 import com.example.flowdiagram.model.ActionSpec;
 import com.example.flowdiagram.model.FlowSpec;
 import com.example.flowdiagram.model.StateSpec;

@@ -1,6 +1,5 @@
-package com.example.flowdiagram.core;
+package com.example.flowdiagram.model;
 
-import com.example.flowdiagram.model.Theme;
 
 /**
  * 完結した HTML ページ / 埋め込み用フラグメントを組み立てる（basic-design.md 8章）。

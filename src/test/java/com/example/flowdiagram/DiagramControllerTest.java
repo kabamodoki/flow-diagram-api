@@ -129,15 +129,6 @@ class DiagramControllerTest {
     }
 
     @Test
-    void previewPageIsServed() throws Exception {
-        // 静的リソースは MockMvc 上では forward として解決される
-        mvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
-                        .forwardedUrl("index.html"));
-    }
-
-    @Test
     void themeLayoutOverrideChangesOutput() throws Exception {
         String json = """
                 {
