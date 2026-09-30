@@ -1269,7 +1269,7 @@ public class DiagramService {
 
                     /* --- 大枠。色は kind ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
                     .fd-canvas .node{position:absolute;z-index:2;border-radius:10px;\
-                    box-shadow:var(--node-shadow);overflow:hidden;border:1.5px solid transparent;\
+                    box-shadow:var(--node-shadow);border:1.5px solid transparent;\
                     transition:outline-color .15s;outline:3px solid transparent;outline-offset:3px;}
                     /* --- 複製参照テキスト（後退辺・自己ループの終端） --- */
                     .fd-canvas .node-clone-ref{position:absolute;z-index:2;display:flex;\
@@ -1277,8 +1277,11 @@ public class DiagramService {
                     font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
                     text-overflow:ellipsis;padding:0 6px;}
                     .fd-canvas .node-clone-ref:hover{color:var(--edge-color);}
+                    /* .node の overflow:hidden をやめた分（v3.13：接続スタブが枠線でクリップされない
+                       ようにするため）、ヘッダー背景の角丸はここで自前で付ける */
                     .fd-canvas .node-header{min-height:var(--header-height);display:flex;\
-                    flex-direction:column;justify-content:center;gap:2px;padding:6px 12px;}
+                    flex-direction:column;justify-content:center;gap:2px;padding:6px 12px;\
+                    border-radius:8.5px 8.5px 0 0;}
                     .fd-canvas .kind-badge{align-self:flex-start;\
                     font-size:var(--badge-font-size);font-weight:700;letter-spacing:.03em;\
                     padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.55);}
