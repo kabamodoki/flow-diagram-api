@@ -78,6 +78,30 @@ class DiagramControllerTest {
     }
 
     @Test
+    void undefinedNextLabelReturns400WithMessage() throws Exception {
+        // basic-design.md v3.16: コントローラで事前チェックし、システムエラー（500）ではなく
+        // パラメータ不足である旨のメッセージ付き400を返す。MockMvc上ではSpring Bootの
+        // /error（実サーバーではレスポンスボディにメッセージを含める設定）までは動かないため、
+        // ResponseStatusExceptionが設定したエラーメッセージ（status().reason）で検証する
+        String json = """
+                { "states": [ { "label": "A", "actions": [ { "label": "go", "next": "zzz" } ] } ] }
+                """;
+        mvc.perform(post("/api/diagram")
+                        .contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason(org.hamcrest.Matchers.containsString("zzz")))
+                .andExpect(status().reason(org.hamcrest.Matchers.containsString("パラメータ不足")));
+    }
+
+    @Test
+    void definedNextLabelPassesControllerCheck() throws Exception {
+        // 存在するlabelへの参照は事前チェックを通過し、通常通り200でHTMLが返ること
+        mvc.perform(post("/api/diagram")
+                        .contentType(MediaType.APPLICATION_JSON).content(VALID))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void themeLayoutOverrideChangesOutput() throws Exception {
         String json = """
                 {
