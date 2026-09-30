@@ -166,6 +166,15 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
+    void noChevronOrCloneArrowSymbol() {
+        // basic-design.md v3.11: アクションチップの「›」、複製ノードの「↩」はいずれも廃止
+        String html = renderCanvas(sample());
+        assertFalse(html.contains("chev"), "矢印チップ(chev)はもう出力しないこと");
+        assertFalse(html.contains("&rsaquo;"), "矢印チップ文字はもう出力しないこと");
+        assertFalse(html.contains("↩"), "複製ノードの矢印記号はもう出力しないこと");
+    }
+
+    @Test
     void arrowTipIsNotOvershotByLastSegmentExtension() {
         // basic-design.md v3.6: v3.4の対称延長は経路の終点（矢印の先端）にもかかってしまい、
         // 矢印の三角形を線が突き抜けて見える不具合を生んでいた。矢印の直前に来るセグメントが
@@ -388,8 +397,9 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void oneActionWithMultipleNextTargetsRendersOneChevronAndTwoEdges() {
+    void oneActionWithMultipleNextTargetsRendersOneChipAndTwoEdges() {
         // basic-design.md 3.3/6.4 v3.1: 1つのアクションから複数の矢印を出せる
+        // v3.11: 矢印チップ(›)は廃止し、ボタン自体から線が伸びるようにした
         FlowSpec spec = new FlowSpec();
         StateSpec a = new StateSpec("A");
         a.actions = new ArrayList<>(List.of(new ActionSpec("button", "go", List.of("B", "C"))));
@@ -400,8 +410,8 @@ class HtmlDiagramRendererTest {
 
         long edgeCount = html.lines().filter(l -> l.contains("class=\"edge\" data-from=\"A\"")).count();
         assertEquals(2, edgeCount, "1つのアクションのnextが2件なら2本のエッジが出ること");
-        long chevronCount = html.lines().filter(l -> l.contains("chev")).count();
-        assertEquals(1, chevronCount, "アクションチップ自体は1つ、矢印マークも1つだけ表示する");
+        long chipCount = html.lines().filter(l -> l.contains("action-label")).count();
+        assertEquals(1, chipCount, "アクションチップ自体は1つだけ表示する");
     }
 
     @Test

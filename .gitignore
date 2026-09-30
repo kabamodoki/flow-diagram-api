@@ -15,3 +15,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# test-request.ps1 が生成する動作確認用の出力
+samples/*.html
