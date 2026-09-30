@@ -882,8 +882,8 @@ public class DiagramService {
         private static final int SKIP_LANE_PITCH = 14;
         private static final int SKIP_LANE_STAGGER = 8;
         public static final int CLONE_TEXT_HEIGHT = 28;
-        /** アクションラベル用の利用可能幅を見積もる際に引く分（node-actions左padding10 + action左右padding24。v3.11で右padding・chevron予約を廃止）。 */
-        private static final int ACTION_LABEL_H_RESERVE = 34;
+        /** アクションラベル用の利用可能幅を見積もる際に引く分（node-actions左右padding20 + action左右padding24。v3.12でnode-actionsの右paddingを復元）。 */
+        private static final int ACTION_LABEL_H_RESERVE = 44;
         private static final int ACTION_LABEL_V_PADDING = 12;
 
         /**
@@ -1126,7 +1126,8 @@ public class DiagramService {
                 for (int j = 0; j < actions.size(); j++) {
                     ActionSpec a = actions.get(j);
                     String typeClass = "type-" + Html.labelToken(a.effectiveType());
-                    sb.append("      <div class=\"action ").append(typeClass)
+                    String hasNextClass = a.effectiveNextTargets().isEmpty() ? "" : " has-next";
+                    sb.append("      <div class=\"action ").append(typeClass).append(hasNextClass)
                       .append("\" style=\"min-height:").append(n.actionRowHeights.get(j)).append("px\">")
                       .append("<span class=\"action-label\">").append(Html.esc(a.label)).append("</span>")
                       .append("</div>\n");
@@ -1286,12 +1287,18 @@ public class DiagramService {
 
                     /* --- アクション。色は type ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
                     .fd-canvas .node-actions{display:flex;flex-direction:column;gap:var(--action-gap);\
-                    padding:var(--node-padding-top) 0 var(--node-padding-bottom) 10px;}
-                    .fd-canvas .action{min-height:var(--action-height);\
+                    padding:var(--node-padding-top) 10px var(--node-padding-bottom);}
+                    .fd-canvas .action{position:relative;min-height:var(--action-height);\
                     display:flex;align-items:center;\
                     padding:4px 12px;border-radius:8px;font-size:var(--action-font-size);}
                     .fd-canvas .action .action-label{flex:1 1 auto;white-space:normal;\
                     overflow-wrap:anywhere;line-height:1.35;}
+                    /* 次の遷移先を持つチップだけ、ボタンの右端からノードの右端までの隙間を橋渡しする
+                       接続スタブを描く（v3.12）。ボタン自体の余白・丸みは変えず、線がボタンから
+                       続いているように見せるためのもの */
+                    .fd-canvas .action.has-next::after{content:"";position:absolute;top:50%;\
+                    right:-10px;width:10px;height:var(--edge-w);background:var(--edge-color);\
+                    transform:translateY(-50%);}
 
                     /* --- 関係線（すべて薄い青の実線で統一） --- */
                     .fd-canvas .edge{position:absolute;left:0;top:0;z-index:1;}

@@ -127,8 +127,8 @@ class HtmlDiagramRendererTest {
     @Test
     void actionTypeClassesAreDynamicTokens() {
         String html = renderCanvas(sample());
-        assertTrue(html.contains("class=\"action type-" + Html.labelToken("button") + "\""));
-        assertTrue(html.contains("class=\"action type-" + Html.labelToken("flow") + "\""));
+        assertTrue(html.contains("class=\"action type-" + Html.labelToken("button")));
+        assertTrue(html.contains("class=\"action type-" + Html.labelToken("flow")));
     }
 
     @Test
@@ -172,6 +172,24 @@ class HtmlDiagramRendererTest {
         assertFalse(html.contains("chev"), "矢印チップ(chev)はもう出力しないこと");
         assertFalse(html.contains("&rsaquo;"), "矢印チップ文字はもう出力しないこと");
         assertFalse(html.contains("↩"), "複製ノードの矢印記号はもう出力しないこと");
+    }
+
+    @Test
+    void actionsWithNextGetHasNextClassForConnectorStub() {
+        // basic-design.md v3.12: ボタンの余白は維持したまま、次の遷移先を持つチップにだけ
+        // 接続スタブ（CSSの::after）を出すための has-next クラスを付与する
+        FlowSpec spec = new FlowSpec();
+        StateSpec a = new StateSpec("A");
+        a.actions = new ArrayList<>(List.of(
+                new ActionSpec("button", "go", "B"),
+                new ActionSpec("button", "terminal", (String) null)));
+        StateSpec b = new StateSpec("B");
+        spec.states = new ArrayList<>(List.of(a, b));
+        String html = renderCanvas(spec);
+
+        assertTrue(html.contains("has-next"), "次の遷移先を持つチップには has-next クラスが付くこと");
+        long hasNextCount = html.lines().filter(l -> l.contains("has-next")).count();
+        assertEquals(1, hasNextCount, "遷移先の無いチップには has-next が付かないこと");
     }
 
     @Test
