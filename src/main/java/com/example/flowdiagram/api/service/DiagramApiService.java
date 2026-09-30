@@ -1,11 +1,11 @@
 package com.example.flowdiagram.api.service;
 
-import com.example.flowdiagram.api.controller.ActionSpecEntity;
-import com.example.flowdiagram.api.controller.ActionTypeStyleEntity;
 import com.example.flowdiagram.api.controller.FlowSpecEntity;
-import com.example.flowdiagram.api.controller.KindStyleEntity;
-import com.example.flowdiagram.api.controller.StateSpecEntity;
-import com.example.flowdiagram.api.controller.ThemeEntity;
+import com.example.flowdiagram.api.controller.FlowSpecEntity.ActionSpecEntity;
+import com.example.flowdiagram.api.controller.FlowSpecEntity.ActionTypeStyleEntity;
+import com.example.flowdiagram.api.controller.FlowSpecEntity.KindStyleEntity;
+import com.example.flowdiagram.api.controller.FlowSpecEntity.StateSpecEntity;
+import com.example.flowdiagram.api.controller.FlowSpecEntity.ThemeEntity;
 import com.example.flowdiagram.model.service.DiagramService;
 import com.example.flowdiagram.model.service.DiagramService.ActionSpec;
 import com.example.flowdiagram.model.service.DiagramService.ActionTypeStyle;

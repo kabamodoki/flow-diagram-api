@@ -32,7 +32,8 @@ curl -X POST http://localhost:8080/api/diagram \
 
 提供するエンドポイントはこの1本のみ。
 
-エラー時は 400 と `{"error":"VALIDATION_ERROR","messages":[...]}`。違反は全件まとめて返る。
+独自のエラーハンドラーは持たない。JSON構文エラーはSpringの既定処理で400、
+入力検証エラー（`states`が空、存在しない`next`指定など）はSpringの既定の500になる。
 
 ## 入力 JSON
 

@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -71,32 +70,11 @@ class DiagramControllerTest {
     }
 
     @Test
-    void unknownNextReturns400WithMessage() throws Exception {
-        String json = """
-                { "states": [ { "label": "A", "actions": [ { "label": "go", "next": "zzz" } ] } ] }
-                """;
-        mvc.perform(post("/api/diagram")
-                        .contentType(MediaType.APPLICATION_JSON).content(json))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.messages[0]",
-                        org.hamcrest.Matchers.containsString("zzz")));
-    }
-
-    @Test
-    void emptyStatesReturns400() throws Exception {
-        mvc.perform(post("/api/diagram")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"states\":[]}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
-    }
-
-    @Test
     void brokenJsonReturns400() throws Exception {
+        // 独自のエラーハンドラーは持たない（ユーザー指示）。Spring既定の400処理のみ確認する
         mvc.perform(post("/api/diagram")
                         .contentType(MediaType.APPLICATION_JSON).content("{ not json"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
