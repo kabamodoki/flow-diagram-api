@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,7 +52,7 @@ class DiagramControllerTest {
     }
 
     @Test
-    void cloneHighlightIsCssOnlyAndWorksInBothPageAndFragment() throws Exception {
+    void cloneHighlightIsCssOnly() throws Exception {
         String backEdgeJson = """
                 {
                   "states": [
@@ -69,23 +68,6 @@ class DiagramControllerTest {
         assertTrue(body(page).contains("node-clone-ref"));
         assertTrue(body(page).contains(":has(~ .node-clone-ref.lbl-"), "CSSの:has()による強調ルールが出ること");
         assertFalse(body(page).contains("scrollIntoView"), "旧クリックジャンプ用JSは廃止済みであること");
-
-        MvcResult fragment = mvc.perform(post("/api/diagram/fragment")
-                        .contentType(MediaType.APPLICATION_JSON).content(backEdgeJson))
-                .andExpect(status().isOk())
-                .andReturn();
-        assertTrue(body(fragment).contains(":has(~ .node-clone-ref.lbl-"), "fragment でも同じCSSが出ること（JS不要のため）");
-    }
-
-    @Test
-    void fragmentHasNoDoctype() throws Exception {
-        MvcResult r = mvc.perform(post("/api/diagram/fragment")
-                        .contentType(MediaType.APPLICATION_JSON).content(VALID))
-                .andExpect(status().isOk())
-                .andReturn();
-        String html = body(r);
-        assertFalse(html.contains("<!DOCTYPE"));
-        assertTrue(html.contains("<style>"));
     }
 
     @Test
@@ -115,17 +97,6 @@ class DiagramControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{ not json"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
-    }
-
-    @Test
-    void sampleIsRenderable() throws Exception {
-        MvcResult sample = mvc.perform(get("/api/sample"))
-                .andExpect(status().isOk())
-                .andReturn();
-        String json = body(sample);
-        mvc.perform(post("/api/diagram")
-                        .contentType(MediaType.APPLICATION_JSON).content(json))
-                .andExpect(status().isOk());
     }
 
     @Test

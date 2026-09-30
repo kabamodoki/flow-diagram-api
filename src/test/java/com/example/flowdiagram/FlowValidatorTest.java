@@ -1,9 +1,9 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.model.DiagramService.FlowValidator;
-import com.example.flowdiagram.model.DiagramService.ActionSpec;
-import com.example.flowdiagram.model.DiagramService.FlowSpec;
-import com.example.flowdiagram.model.DiagramService.StateSpec;
+import com.example.flowdiagram.model.service.DiagramService.FlowValidator;
+import com.example.flowdiagram.model.service.DiagramService.ActionSpec;
+import com.example.flowdiagram.model.service.DiagramService.FlowSpec;
+import com.example.flowdiagram.model.service.DiagramService.StateSpec;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

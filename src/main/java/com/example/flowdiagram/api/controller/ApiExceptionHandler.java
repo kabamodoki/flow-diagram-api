@@ -1,4 +1,4 @@
-package com.example.flowdiagram.api;
+package com.example.flowdiagram.api.controller;
 
 import com.example.flowdiagram.FlowDiagramException;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.example.flowdiagram.api.entity;
+package com.example.flowdiagram.api.controller;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

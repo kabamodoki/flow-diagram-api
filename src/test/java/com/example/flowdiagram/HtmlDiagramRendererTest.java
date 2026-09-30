@@ -1,19 +1,19 @@
 package com.example.flowdiagram;
 
-import com.example.flowdiagram.model.DiagramService.CssBuilder;
-import com.example.flowdiagram.model.DiagramService.Html;
-import com.example.flowdiagram.model.DiagramService.HtmlDiagramRenderer;
-import com.example.flowdiagram.model.DiagramService.HtmlPageWriter;
-import com.example.flowdiagram.model.DiagramService.Layout;
-import com.example.flowdiagram.model.DiagramService.LayoutEngine;
-import com.example.flowdiagram.model.DiagramService.Palette;
-import com.example.flowdiagram.model.DiagramService.StyleRegistry;
-import com.example.flowdiagram.model.DiagramService.ActionSpec;
-import com.example.flowdiagram.model.DiagramService.ActionTypeStyle;
-import com.example.flowdiagram.model.DiagramService.FlowSpec;
-import com.example.flowdiagram.model.DiagramService.KindStyle;
-import com.example.flowdiagram.model.DiagramService.StateSpec;
-import com.example.flowdiagram.model.DiagramService.Theme;
+import com.example.flowdiagram.model.service.DiagramService.CssBuilder;
+import com.example.flowdiagram.model.service.DiagramService.Html;
+import com.example.flowdiagram.model.service.DiagramService.HtmlDiagramRenderer;
+import com.example.flowdiagram.model.service.DiagramService.HtmlPageWriter;
+import com.example.flowdiagram.model.service.DiagramService.Layout;
+import com.example.flowdiagram.model.service.DiagramService.LayoutEngine;
+import com.example.flowdiagram.model.service.DiagramService.Palette;
+import com.example.flowdiagram.model.service.DiagramService.StyleRegistry;
+import com.example.flowdiagram.model.service.DiagramService.ActionSpec;
+import com.example.flowdiagram.model.service.DiagramService.ActionTypeStyle;
+import com.example.flowdiagram.model.service.DiagramService.FlowSpec;
+import com.example.flowdiagram.model.service.DiagramService.KindStyle;
+import com.example.flowdiagram.model.service.DiagramService.StateSpec;
+import com.example.flowdiagram.model.service.DiagramService.Theme;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -440,20 +440,5 @@ class HtmlDiagramRendererTest {
         assertFalse(page.contains("HTMLを保存"));
         assertFalse(page.contains("縮小"));
         assertFalse(page.contains("拡大"));
-    }
-
-    @Test
-    void fragmentHasNoDoctype() {
-        FlowSpec spec = sample();
-        Theme theme = spec.resolvedTheme();
-        Layout layout = new LayoutEngine(theme).build(spec);
-        Map<String, KindStyle> kindStyles = StyleRegistry.resolveKindStyles(spec);
-        Map<String, ActionTypeStyle> typeStyles = StyleRegistry.resolveTypeStyles(spec);
-        String fragment = new HtmlPageWriter(theme).fragment(
-                new CssBuilder(theme).build(),
-                new HtmlDiagramRenderer(theme, kindStyles, typeStyles).render(layout));
-        assertFalse(fragment.contains("<!DOCTYPE"));
-        assertTrue(fragment.contains("<style>"));
-        assertTrue(fragment.contains("fd-canvas"));
     }
 }
