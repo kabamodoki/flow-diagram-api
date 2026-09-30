@@ -1212,7 +1212,8 @@ public class DiagramService {
         }
 
         private static final String LEGEND_HINT_TEXT =
-                "変更を反映するには再度プレビューボタンを押してプレビューを生成してください";
+                "変更を反映するには審査の流れ画面から再度「審査の流れを確認する」"
+                        + "または「申請の流れを確認する」ボタンを押してください";
         private static final int LEGEND_HINT_OFFSET = 24;
     }
 

@@ -263,7 +263,8 @@ class HtmlDiagramRendererTest {
         // 注記を出す（ユーザー指示）
         String html = renderCanvas(sample());
         assertTrue(html.contains("legend-hint"));
-        assertTrue(html.contains("変更を反映するには再度プレビューボタンを押してプレビューを生成してください"));
+        assertTrue(html.contains("変更を反映するには審査の流れ画面から再度「審査の流れを確認する」"
+                + "または「申請の流れを確認する」ボタンを押してください"));
     }
 
     @Test
