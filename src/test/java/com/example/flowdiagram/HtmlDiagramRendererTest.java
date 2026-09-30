@@ -175,9 +175,9 @@ class HtmlDiagramRendererTest {
     }
 
     @Test
-    void actionsWithNextGetHasNextClassForConnectorStub() {
-        // basic-design.md v3.12: ボタンの余白は維持したまま、次の遷移先を持つチップにだけ
-        // 接続スタブ（CSSの::after）を出すための has-next クラスを付与する
+    void actionsWithNextGetConnectorStubOnly() {
+        // basic-design.md v3.14: ボタンの余白は維持したまま、次の遷移先を持つチップにだけ
+        // サーバー計算の接続スタブ（.action-stub）を出す
         FlowSpec spec = new FlowSpec();
         StateSpec a = new StateSpec("A");
         a.actions = new ArrayList<>(List.of(
@@ -187,9 +187,9 @@ class HtmlDiagramRendererTest {
         spec.states = new ArrayList<>(List.of(a, b));
         String html = renderCanvas(spec);
 
-        assertTrue(html.contains("has-next"), "次の遷移先を持つチップには has-next クラスが付くこと");
-        long hasNextCount = html.lines().filter(l -> l.contains("has-next")).count();
-        assertEquals(1, hasNextCount, "遷移先の無いチップには has-next が付かないこと");
+        assertTrue(html.contains("action-stub"), "次の遷移先を持つチップには接続スタブが出ること");
+        long stubCount = html.lines().filter(l -> l.contains("action-stub")).count();
+        assertEquals(1, stubCount, "遷移先の無いチップには接続スタブが出ないこと");
     }
 
     @Test

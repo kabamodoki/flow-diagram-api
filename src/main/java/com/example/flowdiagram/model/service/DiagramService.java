@@ -360,6 +360,8 @@ public class DiagramService {
             public boolean clone;
             /** アクションチップごとの実高さ（basic-design.md 6.1.1）。長いラベルの折り返しを見込んだ px。 */
             public List<Integer> actionRowHeights = new ArrayList<>();
+            /** アクションチップごとの矢印起点y（basic-design.md 6.4）。ボタン側の接続スタブ描画にも使う。 */
+            public List<Integer> actionAnchorYs = new ArrayList<>();
 
             public int right() {
                 return x + width;
@@ -565,6 +567,9 @@ public class DiagramService {
                 }
                 box.height = nodeHeight(boxActions, box.actionRowHeights);
                 placeInColumn(box, nextYByColumn, topY);
+                for (int j = 0; j < boxActions.size(); j++) {
+                    box.actionAnchorYs.add(actionAnchorY(box, j));
+                }
                 layout.nodes.add(box);
                 boxes.put(s.label, box);
             }
@@ -587,7 +592,7 @@ public class DiagramService {
                 for (int j = 0; j < actions.size(); j++) {
                     ActionSpec a = actions.get(j);
                     int sx = from.right();
-                    int sy = actionAnchorY(from, j);
+                    int sy = from.actionAnchorYs.get(j);
                     for (String next : a.effectiveNextTargets()) {
                         Layout.NodeBox target = boxes.get(next);
 
@@ -884,6 +889,15 @@ public class DiagramService {
         public static final int CLONE_TEXT_HEIGHT = 28;
         /** アクションラベル用の利用可能幅を見積もる際に引く分（node-actions左右padding20 + action左右padding24。v3.12でnode-actionsの右paddingを復元）。 */
         private static final int ACTION_LABEL_H_RESERVE = 44;
+        /**
+         * ボタンの接続スタブの長さ（basic-design.md 9章、v3.14）。ボタンの見た目上の右端
+         * （node右border 1.5px + node-actions右padding 10px = 理論値11.5px）から、ノードの
+         * 右端（外部エッジのsxと同じ座標）までを橋渡しする。CSSのposition:absoluteは
+         * ボーダーボックスではなくパディングボックス基準で解決されるため、CSSの相対指定だけでは
+         * ボタン自身のborderWidth（JSONで可変）次第でずれる。サーバー側でこの固定長を使い、
+         * 外部エッジと全く同じ座標系（n.right()）で描画することでピクセル単位で一致させる。
+         */
+        public static final int ACTION_STUB_LENGTH = 12;
         private static final int ACTION_LABEL_V_PADDING = 12;
 
         /**
@@ -1037,7 +1051,13 @@ public class DiagramService {
                 int startY = s.y;
                 int endX = s.horizontal ? s.x + s.width : s.x;
                 int endY = s.horizontal ? s.y : s.y + s.height;
-                boolean extendStart = touchesEndpoint(startX, startY, prev) || touchesEndpoint(startX, startY, next);
+                // 経路全体の起点（最初のセグメントの開始端）は、v3.12でボタン側の接続スタブ
+                // （basic-design.md 9章）が見えるようになったため、そのスタブとぴったり繋がるよう
+                // ここも延長する（以前は発火元ボックスの背後に隠れる前提で延長しなかったが、
+                // その前提が崩れたため）。
+                boolean isFirst = i == 0;
+                boolean extendStart = isFirst
+                        || touchesEndpoint(startX, startY, prev) || touchesEndpoint(startX, startY, next);
                 boolean extendEnd = touchesEndpoint(endX, endY, prev) || touchesEndpoint(endX, endY, next);
                 // 矢印に接続する最後のセグメントは、矢印の先端（arrowX/arrowY）ではなく根元で止める
                 // （basic-design.md 9章）。三角形は先端に近づくほど細くなるため、線をそのまま先端まで
@@ -1126,8 +1146,7 @@ public class DiagramService {
                 for (int j = 0; j < actions.size(); j++) {
                     ActionSpec a = actions.get(j);
                     String typeClass = "type-" + Html.labelToken(a.effectiveType());
-                    String hasNextClass = a.effectiveNextTargets().isEmpty() ? "" : " has-next";
-                    sb.append("      <div class=\"action ").append(typeClass).append(hasNextClass)
+                    sb.append("      <div class=\"action ").append(typeClass)
                       .append("\" style=\"min-height:").append(n.actionRowHeights.get(j)).append("px\">")
                       .append("<span class=\"action-label\">").append(Html.esc(a.label)).append("</span>")
                       .append("</div>\n");
@@ -1135,6 +1154,30 @@ public class DiagramService {
                 sb.append("    </div>\n");
             }
             sb.append("  </div>\n");
+
+            if (!actions.isEmpty()) {
+                for (int j = 0; j < actions.size(); j++) {
+                    if (!actions.get(j).effectiveNextTargets().isEmpty()) {
+                        renderActionStub(sb, n, j);
+                    }
+                }
+            }
+        }
+
+        /**
+         * ボタンの見た目上の右端から、ノードの右端（外部エッジの起点sxと同じ座標）までを
+         * 橋渡しする接続スタブ（basic-design.md 9章、v3.14）。`.fd-canvas` 直下の兄弟要素として
+         * 描画する（`.node` は position:absolute のため、その子だと座標系が n.x/n.y 基準に
+         * ずれてしまう）。外部エッジと全く同じ座標系（`n.right()` / `n.actionAnchorYs`）で
+         * 描画するため、CSSのborder幅設定に関わらずピクセル単位で継ぎ目なく繋がる。
+         */
+        private void renderActionStub(StringBuilder sb, Layout.NodeBox n, int j) {
+            int right = n.right();
+            int left = right - LayoutEngine.ACTION_STUB_LENGTH;
+            int sy = n.actionAnchorYs.get(j);
+            sb.append("    <div class=\"action-stub\" style=\"left:").append(left)
+              .append("px;top:calc(").append(sy).append("px - var(--edge-w) / 2);width:")
+              .append(LayoutEngine.ACTION_STUB_LENGTH).append("px\"></div>\n");
         }
 
         /** 実際に使われている kind/type を動的に列挙する（basic-design.md 8章）。 */
@@ -1291,17 +1334,16 @@ public class DiagramService {
                     /* --- アクション。色は type ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
                     .fd-canvas .node-actions{display:flex;flex-direction:column;gap:var(--action-gap);\
                     padding:var(--node-padding-top) 10px var(--node-padding-bottom);}
-                    .fd-canvas .action{position:relative;min-height:var(--action-height);\
+                    .fd-canvas .action{min-height:var(--action-height);\
                     display:flex;align-items:center;\
                     padding:4px 12px;border-radius:8px;font-size:var(--action-font-size);}
                     .fd-canvas .action .action-label{flex:1 1 auto;white-space:normal;\
                     overflow-wrap:anywhere;line-height:1.35;}
                     /* 次の遷移先を持つチップだけ、ボタンの右端からノードの右端までの隙間を橋渡しする
-                       接続スタブを描く（v3.12）。ボタン自体の余白・丸みは変えず、線がボタンから
-                       続いているように見せるためのもの */
-                    .fd-canvas .action.has-next::after{content:"";position:absolute;top:50%;\
-                    right:-10px;width:10px;height:var(--edge-w);background:var(--edge-color);\
-                    transform:translateY(-50%);}
+                       接続スタブを描く（v3.12。v3.14でCSS擬似要素からサーバー計算divへ変更）。
+                       ボタン自体の余白・丸みは変えず、線がボタンから続いているように見せるためのもの */
+                    .fd-canvas .action-stub{position:absolute;z-index:2;\
+                    height:var(--edge-w);background:var(--edge-color);}
 
                     /* --- 関係線（すべて薄い青の実線で統一） --- */
                     .fd-canvas .edge{position:absolute;left:0;top:0;z-index:1;}
