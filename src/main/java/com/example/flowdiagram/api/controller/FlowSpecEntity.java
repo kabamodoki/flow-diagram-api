@@ -7,13 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * コントローラがリクエストを受け取るための入り口 entity（basic-design.md 3章）。JSON schema は
- * 変更しない。model 層の内部処理用 entity（{@code model.service.DiagramService} のネストクラス）
- * とは別クラスで、意味付け（既定値解決など）は一切行わないデータ保持だけの役割。相互変換は
- * {@link com.example.flowdiagram.api.service.DiagramApiService} が行う。
+ * リクエストのJSONをそのまま受け取るための入れ物（entity）のクラス。状態遷移図1件分の定義
+ * （タイトル・見た目の設定・各ステータスの一覧）をまるごと表す。
  *
- * <p>コントローラが受け取る entity 一式なので、このクラスの下にネストクラスとして1ファイルに
- * まとめている。</p>
+ * <p>ここに並んでいるクラス群はJSONの形をそのまま写しただけのデータの入れ物で、中身の意味を
+ * 判断したり処理したりすることは一切しない（それはmodel側の役割）。JSONの入れ子構造に合わせて、
+ * 関連するクラスをすべてこのファイルの中にネストクラスとしてまとめている。</p>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FlowSpecEntity {
@@ -24,7 +23,7 @@ public class FlowSpecEntity {
     public Map<String, ActionTypeStyleEntity> types;
     public List<StateSpecEntity> states;
 
-    /** ステータス/手続き表現（basic-design.md 3.2）。 */
+    /** 1つのステータス（または手続き）の定義。中に複数のアクションを持てる。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class StateSpecEntity {
 
@@ -40,7 +39,7 @@ public class FlowSpecEntity {
         }
     }
 
-    /** アクション表現（basic-design.md 3.3）。 */
+    /** ステータスの中の1つのボタン（アクション）の定義。押した後どこへ遷移するかを持つ。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ActionSpecEntity {
 
@@ -60,7 +59,7 @@ public class FlowSpecEntity {
         }
     }
 
-    /** kind の見た目定義（basic-design.md 3.5）。 */
+    /** ステータスの種類（kind）ごとの色・見た目の指定。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class KindStyleEntity {
         public String headerBackground;
@@ -69,7 +68,7 @@ public class FlowSpecEntity {
         public String textColor;
     }
 
-    /** type の見た目定義（basic-design.md 3.6）。 */
+    /** アクションの種類（type）ごとの色・見た目の指定。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ActionTypeStyleEntity {
         public String background;
@@ -80,8 +79,8 @@ public class FlowSpecEntity {
     }
 
     /**
-     * テーマ上書き表現（basic-design.md 4章）。全フィールド任意。
-     * 既定値・マージロジックは持たない（それは model.service.DiagramService.Theme の責務）。
+     * レイアウトや文字サイズなどの見た目設定の上書き指定。全項目が任意で、指定しなければ
+     * 既定値が使われる（この既定値の決定処理自体はここでは行わない）。
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ThemeEntity {

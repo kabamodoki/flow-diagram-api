@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * コントローラの値を受け取り処理を行うクラス（API層）。
- * コントローラの入り口 entity（{@code api.controller} パッケージ）と model 層の内部 entity
- * （{@code model.service} パッケージ）は別クラスのため、ここで相互変換したうえで
- * {@link DiagramService}（model層。処理の全般を行う）を呼び出し、結果をコントローラ向けに
- * 加工する。
+ * コントローラから渡されたリクエストのデータを、実際の処理を行う {@link DiagramService} が
+ * 扱える形に変換して橋渡しする役割のクラス。
+ *
+ * <p>リクエストのデータ構造（entity）と、処理用に内部で使うデータ構造（model）は別物として
+ * 分けているため、このクラスで両者を変換する。生成されたHTMLをレスポンスとして組み立てて
+ * 返すのもこのクラスの仕事。</p>
  */
 @Service
 public class DiagramApiService {
@@ -45,7 +46,7 @@ public class DiagramApiService {
         return ResponseEntity.ok().header("Content-Type", HTML).body(html);
     }
 
-    // --- entity(api) -> model 変換 ---
+    // --- ここから下は、リクエストのデータ（entity）を処理用のデータ（model）に詰め替える処理 ---
 
     private static FlowSpec toModel(FlowSpecEntity e) {
         if (e == null) {

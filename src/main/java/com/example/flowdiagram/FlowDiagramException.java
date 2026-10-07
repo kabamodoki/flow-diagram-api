@@ -2,7 +2,7 @@ package com.example.flowdiagram;
 
 import java.util.List;
 
-/** 入力 JSON の検証エラー。全違反をまとめて保持する（basic-design.md 5章）。 */
+/** 入力データが不正なときに投げる例外。違反内容を複数まとめて持てる。 */
 public class FlowDiagramException extends RuntimeException {
 
     private final List<String> messages;

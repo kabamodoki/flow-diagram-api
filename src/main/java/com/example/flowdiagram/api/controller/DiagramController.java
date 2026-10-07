@@ -15,14 +15,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * API の入り口（basic-design.md 10章）。
- * 基本的には何もせず {@link DiagramApiService} を呼び出すだけ。
- * 提供するのは HTML を返す1本のみ。
+ * 状態遷移図を生成するAPIの入り口となるクラス。HTTPリクエストを受け取り、実際の処理は
+ * {@link DiagramApiService} に委ねる。自分では画面の組み立てなどの重い処理は行わない。
  *
- * <p>ただし {@code actions[].next} が {@code states[].label} として定義されていない場合、
- * model層まで処理が進んでから気づかれにくいシステムエラー（basic-design.md 5章・10章）に
- * なってしまうため、ここでモデル層へ渡す前にあらかじめチェックし、パラメータ不足である旨を
- * 明示した {@link ResponseStatusException}（400）として返す（v3.16、ユーザー指示）。</p>
+ * <p>ただし1点だけ、リクエストの中身を奥の処理まで渡す前にチェックしている: アクションの
+ * 遷移先（next）が、実在するステータス名（label）を指しているかどうか。ここで弾かないと、
+ * 存在しない遷移先が奥の方で初めて発覚し、原因の分かりにくいエラーになってしまうため。</p>
  */
 @RestController
 public class DiagramController {
@@ -42,8 +40,8 @@ public class DiagramController {
     }
 
     /**
-     * {@code actions[].next} が {@code states[].label} として定義されているかを検証する。
-     * 未定義の参照が1件でもあれば、パラメータ不足である旨のメッセージ付きで400を返す。
+     * 全アクションの遷移先（next）が、実在するステータス名（label）を指しているかをチェックする。
+     * 存在しない名前を指しているものが1件でもあれば、その場でエラーにして処理を中断する。
      */
     private void validateNextReferencesExist(FlowSpecEntity spec) {
         if (spec == null || spec.states == null) {
