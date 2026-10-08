@@ -1,0 +1,911 @@
+{
+  "title": "サンプル3（大規模フロー）",
+  "kinds": {
+    "ステータス": {
+      "headerBackground": "#eaf4ff",
+      "background": "#f8fbfe",
+      "border": "#cfe3f5",
+      "textColor": "#2c6291"
+    },
+    "手続き": {
+      "headerBackground": "#eaf8ee",
+      "background": "#f8fcf9",
+      "border": "#cdeada",
+      "textColor": "#2f7a52"
+    }
+  },
+  "types": {
+    "button": {
+      "background": "#ffffff",
+      "border": "#c4c9d0",
+      "borderWidth": 1.5,
+      "textColor": "#2d3748",
+      "shadow": "0 1px 2px rgba(15,23,42,.10)"
+    },
+    "flow": {
+      "background": "#f8fbfe",
+      "border": "#7fb8ee",
+      "borderWidth": 1.5,
+      "textColor": "#2c6291"
+    }
+  },
+  "states": [
+    {
+      "label": "G0-S0",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "進む",
+          "next": "G0-S1"
+        },
+        {
+          "type": "flow",
+          "label": "分岐",
+          "next": "G0-S2"
+        }
+      ]
+    },
+    {
+      "label": "G0-S1",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "次へ",
+          "next": "G0-S3"
+        },
+        {
+          "type": "flow",
+          "label": "戻る",
+          "next": "G0-S0"
+        }
+      ]
+    },
+    {
+      "label": "G0-S2",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "合流",
+          "next": "G0-S3"
+        }
+      ]
+    },
+    {
+      "label": "G0-S3",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "完了",
+          "next": "G0-S4"
+        },
+        {
+          "type": "flow",
+          "label": "次グループへ",
+          "next": "G1-S0"
+        }
+      ]
+    },
+    {
+      "label": "G0-S4",
+      "kind": "手続き"
+    },
+    {
+      "label": "G1-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G1-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G1-S2"
+        }
+      ]
+    },
+    {
+      "label": "G1-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G1-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G1-S0"
+        }
+      ]
+    },
+    {
+      "label": "G1-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G1-S3"
+        }
+      ]
+    },
+    {
+      "label": "G1-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G1-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G2-S0"
+        }
+      ]
+    },
+    {
+      "label": "G1-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G2-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G2-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G2-S2"
+        }
+      ]
+    },
+    {
+      "label": "G2-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G2-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G2-S0"
+        }
+      ]
+    },
+    {
+      "label": "G2-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G2-S3"
+        }
+      ]
+    },
+    {
+      "label": "G2-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G2-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G3-S0"
+        }
+      ]
+    },
+    {
+      "label": "G2-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G3-S0",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "進む",
+          "next": "G3-S1"
+        },
+        {
+          "type": "flow",
+          "label": "分岐",
+          "next": "G3-S2"
+        }
+      ]
+    },
+    {
+      "label": "G3-S1",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "次へ",
+          "next": "G3-S3"
+        },
+        {
+          "type": "flow",
+          "label": "戻る",
+          "next": "G3-S0"
+        }
+      ]
+    },
+    {
+      "label": "G3-S2",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "合流",
+          "next": "G3-S3"
+        }
+      ]
+    },
+    {
+      "label": "G3-S3",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "完了",
+          "next": "G3-S4"
+        },
+        {
+          "type": "flow",
+          "label": "次グループへ",
+          "next": "G4-S0"
+        }
+      ]
+    },
+    {
+      "label": "G3-S4",
+      "kind": "手続き"
+    },
+    {
+      "label": "G4-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G4-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G4-S2"
+        }
+      ]
+    },
+    {
+      "label": "G4-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G4-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G4-S0"
+        }
+      ]
+    },
+    {
+      "label": "G4-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G4-S3"
+        }
+      ]
+    },
+    {
+      "label": "G4-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G4-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G5-S0"
+        }
+      ]
+    },
+    {
+      "label": "G4-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G5-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G5-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G5-S2"
+        }
+      ]
+    },
+    {
+      "label": "G5-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G5-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G5-S0"
+        }
+      ]
+    },
+    {
+      "label": "G5-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G5-S3"
+        }
+      ]
+    },
+    {
+      "label": "G5-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G5-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G6-S0"
+        }
+      ]
+    },
+    {
+      "label": "G5-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G6-S0",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "進む",
+          "next": "G6-S1"
+        },
+        {
+          "type": "flow",
+          "label": "分岐",
+          "next": "G6-S2"
+        }
+      ]
+    },
+    {
+      "label": "G6-S1",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "次へ",
+          "next": "G6-S3"
+        },
+        {
+          "type": "flow",
+          "label": "戻る",
+          "next": "G6-S0"
+        }
+      ]
+    },
+    {
+      "label": "G6-S2",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "合流",
+          "next": "G6-S3"
+        }
+      ]
+    },
+    {
+      "label": "G6-S3",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "完了",
+          "next": "G6-S4"
+        },
+        {
+          "type": "flow",
+          "label": "次グループへ",
+          "next": "G7-S0"
+        }
+      ]
+    },
+    {
+      "label": "G6-S4",
+      "kind": "手続き"
+    },
+    {
+      "label": "G7-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G7-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G7-S2"
+        }
+      ]
+    },
+    {
+      "label": "G7-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G7-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G7-S0"
+        }
+      ]
+    },
+    {
+      "label": "G7-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G7-S3"
+        }
+      ]
+    },
+    {
+      "label": "G7-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G7-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G8-S0"
+        }
+      ]
+    },
+    {
+      "label": "G7-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G8-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G8-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G8-S2"
+        }
+      ]
+    },
+    {
+      "label": "G8-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G8-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G8-S0"
+        }
+      ]
+    },
+    {
+      "label": "G8-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G8-S3"
+        }
+      ]
+    },
+    {
+      "label": "G8-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G8-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G9-S0"
+        }
+      ]
+    },
+    {
+      "label": "G8-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G9-S0",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "進む",
+          "next": "G9-S1"
+        },
+        {
+          "type": "flow",
+          "label": "分岐",
+          "next": "G9-S2"
+        }
+      ]
+    },
+    {
+      "label": "G9-S1",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "次へ",
+          "next": "G9-S3"
+        },
+        {
+          "type": "flow",
+          "label": "戻る",
+          "next": "G9-S0"
+        }
+      ]
+    },
+    {
+      "label": "G9-S2",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "合流",
+          "next": "G9-S3"
+        }
+      ]
+    },
+    {
+      "label": "G9-S3",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "完了",
+          "next": "G9-S4"
+        },
+        {
+          "type": "flow",
+          "label": "次グループへ",
+          "next": "G10-S0"
+        }
+      ]
+    },
+    {
+      "label": "G9-S4",
+      "kind": "手続き"
+    },
+    {
+      "label": "G10-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G10-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G10-S2"
+        }
+      ]
+    },
+    {
+      "label": "G10-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G10-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G10-S0"
+        }
+      ]
+    },
+    {
+      "label": "G10-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G10-S3"
+        }
+      ]
+    },
+    {
+      "label": "G10-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G10-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G11-S0"
+        }
+      ]
+    },
+    {
+      "label": "G10-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G11-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G11-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G11-S2"
+        }
+      ]
+    },
+    {
+      "label": "G11-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G11-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G11-S0"
+        }
+      ]
+    },
+    {
+      "label": "G11-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G11-S3"
+        }
+      ]
+    },
+    {
+      "label": "G11-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G11-S4"
+        },
+        {
+          "type": "button",
+          "label": "次グループへ",
+          "next": "G12-S0"
+        }
+      ]
+    },
+    {
+      "label": "G11-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "G12-S0",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "進む",
+          "next": "G12-S1"
+        },
+        {
+          "type": "flow",
+          "label": "分岐",
+          "next": "G12-S2"
+        }
+      ]
+    },
+    {
+      "label": "G12-S1",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "次へ",
+          "next": "G12-S3"
+        },
+        {
+          "type": "flow",
+          "label": "戻る",
+          "next": "G12-S0"
+        }
+      ]
+    },
+    {
+      "label": "G12-S2",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "合流",
+          "next": "G12-S3"
+        }
+      ]
+    },
+    {
+      "label": "G12-S3",
+      "kind": "手続き",
+      "actions": [
+        {
+          "type": "flow",
+          "label": "完了",
+          "next": "G12-S4"
+        },
+        {
+          "type": "flow",
+          "label": "次グループへ",
+          "next": "G13-S0"
+        }
+      ]
+    },
+    {
+      "label": "G12-S4",
+      "kind": "手続き"
+    },
+    {
+      "label": "G13-S0",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "進む",
+          "next": "G13-S1"
+        },
+        {
+          "type": "button",
+          "label": "分岐",
+          "next": "G13-S2"
+        }
+      ]
+    },
+    {
+      "label": "G13-S1",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "次へ",
+          "next": "G13-S3"
+        },
+        {
+          "type": "button",
+          "label": "戻る",
+          "next": "G13-S0"
+        }
+      ]
+    },
+    {
+      "label": "G13-S2",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "合流",
+          "next": "G13-S3"
+        }
+      ]
+    },
+    {
+      "label": "G13-S3",
+      "kind": "ステータス",
+      "actions": [
+        {
+          "type": "button",
+          "label": "完了",
+          "next": "G13-S4"
+        }
+      ]
+    },
+    {
+      "label": "G13-S4",
+      "kind": "ステータス"
+    }
+  ]
+}
