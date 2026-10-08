@@ -15,28 +15,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * 状態遷移図を1枚のHTMLとして組み立てる中心クラス。入力データのチェックから、箱や矢印を
- * どこに置くかの位置計算、色やCSSの組み立て、最終的なHTMLの生成までを一手に引き受ける。
- * 呼び出す側（APIの窓口）はこのクラスの {@link #renderPage} を呼ぶだけでよく、内部で
- * どういう手順で組み立てているかを知る必要はない。
- *
- * <p>処理に必要なデータの入れ物（ステータス・アクション・レイアウト結果など）や、各工程を
- * 担当する小さなクラス（検証・レイアウト計算・CSS生成・HTML生成など）は、すべてこのクラスの
- * 内側にまとめて置いている。</p>
- */
+/** モデルサービス。 */
 @Service
 public class DiagramService {
 
     // ============================================================
-    // 外から呼ばれる唯一の入り口
+    // 公開メソッド
     // ============================================================
 
-    /**
-     * 状態遷移図1件分のデータを受け取り、ブラウザでそのまま開ける完結したHTMLを1枚返す。
-     * 処理の流れ: ①入力データのチェック → ②見た目設定の確定 → ③箱や矢印の配置計算 →
-     * ④使われている色の解決 → ⑤CSSの組み立て → ⑥HTML本体の組み立て → ⑦1ページにまとめる。
-     */
+    /** HTML生成処理。 */
     public String renderPage(FlowSpec spec) {
         FlowValidator.validate(spec);
         Theme theme = spec.resolvedTheme();
@@ -49,12 +36,10 @@ public class DiagramService {
     }
 
     // ============================================================
-    // ここから下は、処理の途中で使うデータの入れ物（クラス）たち。
-    // リクエストで受け取るデータの入れ物（api側）とは別物で、こちらはJSONの形を
-    // 気にせず処理しやすい形にしたもの。
+    // modelエンティティ
     // ============================================================
 
-    /** 状態遷移図1件分のデータ全体。タイトル・見た目設定・ステータス一覧を持つ。 */
+    /** FlowSpecモデル。 */
     public static class FlowSpec {
 
         public String title;
@@ -62,10 +47,10 @@ public class DiagramService {
         /** 見た目の部分上書き。指定しなければ既定の見た目になる。 */
         public Theme theme;
 
-        /** ステータスの種類（kind）ごとの見た目定義。未指定可。 */
+        /** kind見た目定義。 */
         public Map<String, KindStyle> kinds;
 
-        /** アクションの種類（type）ごとの見た目定義。未指定可。 */
+        /** type見た目定義。 */
         public Map<String, ActionTypeStyle> types;
 
         public List<StateSpec> states = new ArrayList<>();
@@ -74,29 +59,25 @@ public class DiagramService {
             return (title == null || title.isBlank()) ? "" : title;
         }
 
-        /** 既定値とマージ済みのテーマを返す。 */
+        /** テーマ解決処理。 */
         public Theme resolvedTheme() {
             return Theme.defaults().mergeWith(theme);
         }
     }
 
-    /**
-     * 図に表示する1つの箱（ステータス、または手続き）。IDのような専用の識別子は持たず、
-     * {@link #label}（表示名）がそのまま箱を特定するためのキーも兼ねる（図の中で重複不可）。
-     * アクションを何も持たなければ、矢印の行き着く先となる終端の箱として扱われる。
-     */
+    /** StateSpecモデル。 */
     public static class StateSpec {
 
-        /** kindが指定されなかったときに使う種類名。 */
+        /** kind既定値。 */
         public static final String DEFAULT_KIND = "default";
 
-        /** 箱に表示する名前。図の中で一意である必要があり、他の箱から参照されるときの名前にもなる。 */
+        /** 箱の表示名。 */
         public String label;
 
-        /** 箱の種類（例: 「ステータス」「手続き」など自由な文字列）。見た目の色分けに使う。省略可。 */
+        /** 箱の種類。 */
         public String kind;
 
-        /** 箱の中に並ぶボタン（アクション）の一覧。空なら、矢印が到達するだけの終端の箱になる。 */
+        /** アクション一覧。 */
         public List<ActionSpec> actions = new ArrayList<>();
 
         public StateSpec() {
@@ -110,56 +91,50 @@ public class DiagramService {
             return actions == null ? List.of() : actions;
         }
 
-        /** kindが省略されていれば既定の種類名を、指定されていればそのまま返す。 */
+        /** kind解決処理。 */
         public String effectiveKind() {
             return (kind == null || kind.isBlank()) ? DEFAULT_KIND : kind;
         }
     }
 
-    /**
-     * 箱の中にある1つのボタン（アクション）。押した後にどの箱へ遷移するかを持つ。
-     * 種類（type）は自由な文字列で、見た目の色分けに使う以外の意味は持たない。
-     */
+    /** ActionSpecモデル。 */
     public static class ActionSpec {
 
-        /** typeが指定されなかったときに使う種類名。 */
+        /** type既定値。 */
         public static final String DEFAULT_TYPE = "default";
 
-        /** ボタンの種類（例: 「button」「flow」など自由な文字列）。見た目の色分けに使う。省略可。 */
+        /** ボタンの種類。 */
         public String type;
 
-        /** ボタンに表示する名前。必須。 */
+        /** ボタンの表示名。 */
         public String label;
 
-        /**
-         * 遷移先の箱の名前（label）一覧。1つのボタンから複数の箱へ矢印を出したい場合は
-         * ここに複数指定する。
-         */
+        /** 遷移先label一覧。 */
         public List<String> next;
 
         public ActionSpec() {
         }
 
-        /** 遷移先が1つだけの場合のコンストラクタ。next が空文字/nullなら遷移無しとして扱う。 */
+        /** 単一遷移先コンストラクタ。 */
         public ActionSpec(String type, String label, String next) {
             this.type = type;
             this.label = label;
             this.next = (next == null || next.isBlank()) ? null : List.of(next);
         }
 
-        /** 遷移先が複数ある場合のコンストラクタ。 */
+        /** 複数遷移先コンストラクタ。 */
         public ActionSpec(String type, String label, List<String> next) {
             this.type = type;
             this.label = label;
             this.next = next;
         }
 
-        /** typeが省略されていれば既定の種類名を、指定されていればそのまま返す。 */
+        /** type解決処理。 */
         public String effectiveType() {
             return (type == null || type.isBlank()) ? DEFAULT_TYPE : type;
         }
 
-        /** 遷移先一覧のうち、空文字やnullを取り除いた実際に有効なものだけを返す。 */
+        /** 遷移先一覧取得処理。 */
         public List<String> effectiveNextTargets() {
             if (next == null) {
                 return List.of();
@@ -174,10 +149,7 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 箱の種類（kind）ごとの色の定義。すべての項目が省略可能で、指定されなかった色は
-     * 既定色で補われる。
-     */
+    /** KindStyleモデル。 */
     public static class KindStyle {
 
         public String headerBackground;
@@ -188,7 +160,7 @@ public class DiagramService {
         public KindStyle() {
         }
 
-        /** 何も指定がない種類に使う、特定の意味に偏らない灰色系の既定色一式。 */
+        /** 既定値生成処理。 */
         public static KindStyle defaults() {
             KindStyle s = new KindStyle();
             s.headerBackground = "#eef0f2";
@@ -198,7 +170,7 @@ public class DiagramService {
             return s;
         }
 
-        /** this をベースに、override の非 null フィールドだけを反映した新インスタンスを返す。 */
+        /** マージ処理。 */
         public KindStyle mergeWith(KindStyle o) {
             KindStyle r = new KindStyle();
             r.headerBackground = pick(o == null ? null : o.headerBackground, headerBackground);
@@ -213,9 +185,7 @@ public class DiagramService {
         }
     }
 
-    /**
-     * ボタンの種類（type）ごとの色・枠線の定義。すべての項目が省略可能。
-     */
+    /** ActionTypeStyleモデル。 */
     public static class ActionTypeStyle {
 
         public String background;
@@ -227,7 +197,7 @@ public class DiagramService {
         public ActionTypeStyle() {
         }
 
-        /** 何も指定がない種類に使う既定色一式。 */
+        /** 既定値生成処理。 */
         public static ActionTypeStyle defaults() {
             ActionTypeStyle s = new ActionTypeStyle();
             s.background = "#ffffff";
@@ -238,7 +208,7 @@ public class DiagramService {
             return s;
         }
 
-        /** this をベースに、override の非 null フィールドだけを反映した新インスタンスを返す。 */
+        /** マージ処理。 */
         public ActionTypeStyle mergeWith(ActionTypeStyle o) {
             ActionTypeStyle r = new ActionTypeStyle();
             r.background = pick(o == null ? null : o.background, background);
@@ -254,13 +224,10 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 図全体のレイアウト・文字サイズなどの設定。箱や矢印の色はここには含まれない
-     * （矢印などの共通色は {@link Palette} に定数として直接持っている）。
-     */
+    /** Themeモデル。 */
     public static class Theme {
 
-        // --- 配置に関する設定 ---
+        // --- 配置設定 ---
         public Integer nodeWidth;
         public Integer headerHeight;
         public Integer actionRowHeight;
@@ -271,7 +238,7 @@ public class DiagramService {
         public Integer rowGap;
         public Integer canvasPadding;
 
-        // --- 文字・配色に関する設定 ---
+        // --- 文字・配色設定 ---
         public String fontFamily;
         public Integer titleFontSize;
         public Integer badgeFontSize;
@@ -310,7 +277,7 @@ public class DiagramService {
             return t;
         }
 
-        /** this（＝既定値）をベースに、override の非 null フィールドだけを反映した新インスタンスを返す。 */
+        /** マージ処理。 */
         public Theme mergeWith(Theme o) {
             Theme r = new Theme();
             r.nodeWidth = pick(o == null ? null : o.nodeWidth, nodeWidth);
@@ -346,10 +313,10 @@ public class DiagramService {
         }
     }
 
-    /** 箱や矢印を実際に画面のどこへ置くかを計算した結果。座標はすべてピクセル単位。 */
+    /** レイアウト計算結果モデル。 */
     public static class Layout {
 
-        /** 画面に配置された1つの箱の情報。通常の箱と、後戻り先を表す複製の箱の両方をこれで表す。 */
+        /** NodeBoxモデル。 */
         public static class NodeBox {
             public StateSpec state;
             public int column;
@@ -357,11 +324,11 @@ public class DiagramService {
             public int y;
             public int width;
             public int height;
-            /** trueなら、元のステータスにボタンがあっても何も描かない（後戻り先を示すだけの複製の箱）。 */
+            /** 複製箱フラグ。 */
             public boolean clone;
-            /** ボタン1つ1つの実際の高さ。長い名前は折り返すため、ボタンごとに高さが変わりうる。 */
+            /** ボタン高さ一覧。 */
             public List<Integer> actionRowHeights = new ArrayList<>();
-            /** ボタン1つ1つから矢印が出発するy座標。 */
+            /** ボタン矢印起点y座標一覧。 */
             public List<Integer> actionAnchorYs = new ArrayList<>();
 
             public int right() {
@@ -373,7 +340,7 @@ public class DiagramService {
             }
         }
 
-        /** 矢印の経路を構成する1本の線分。水平か垂直のどちらか一方のみ。 */
+        /** Segmentモデル。 */
         public static class Segment {
             public boolean horizontal;
             public int x;
@@ -400,7 +367,7 @@ public class DiagramService {
             }
         }
 
-        /** ボタン1つから出る矢印1本分の経路（線分の集まり）。矢印は常に起点より右へ進む。 */
+        /** EdgeRouteモデル。 */
         public static class EdgeRoute {
             public String fromStateLabel;
             public List<Segment> segments = new ArrayList<>();
@@ -414,7 +381,7 @@ public class DiagramService {
         public List<NodeBox> nodes = new ArrayList<>();
         public List<EdgeRoute> edges = new ArrayList<>();
 
-        /** 箱の名前（label）から通常の箱（複製は含まない）を引けるようにした一覧。 */
+        /** label検索用マップ生成処理。 */
         public Map<String, NodeBox> nodeByLabel() {
             Map<String, NodeBox> m = new LinkedHashMap<>();
             for (NodeBox n : nodes) {
@@ -425,13 +392,10 @@ public class DiagramService {
     }
 
     // ============================================================
-    // ここから下は、実際の処理（検証・配置計算・CSS/HTML組み立て）を担当する部品たち。
+    // 検証・配置計算・CSS/HTML組み立て
     // ============================================================
 
-    /**
-     * 受け取ったデータに不備がないかをチェックする。見つかった不備は1つで止めず、
-     * すべて集めてからまとめてエラーとして投げる。
-     */
+    /** バリデーション処理。 */
     public static final class FlowValidator {
 
         private FlowValidator() {
@@ -440,12 +404,12 @@ public class DiagramService {
         public static void validate(FlowSpec spec) {
             List<String> errors = new ArrayList<>();
 
-            // ステータスが1件も無ければ、他のチェックをするまでもなくここで打ち切る
+            // states必須チェック
             if (spec == null || spec.states == null || spec.states.isEmpty()) {
                 throw new FlowDiagramException(List.of("states は1件以上必要です"));
             }
 
-            // 名前（label）の必須チェックと重複チェック
+            // label必須・重複チェック
             Set<String> labels = new LinkedHashSet<>();
             for (int i = 0; i < spec.states.size(); i++) {
                 StateSpec s = spec.states.get(i);
@@ -458,7 +422,7 @@ public class DiagramService {
                 }
             }
 
-            // ボタン名の必須チェックと、遷移先が実在する名前を指しているかのチェック
+            // アクションlabel必須・next参照チェック
             for (int i = 0; i < spec.states.size(); i++) {
                 StateSpec s = spec.states.get(i);
                 if (s == null) {
@@ -486,16 +450,13 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 「どの種類（kind/type）がどんな色か」を、実際に使われている種類の分だけ解決して
-     * 一覧にするクラス。リクエストで指定された色があればそれを使い、無ければ既定色を使う。
-     */
+    /** スタイル解決処理。 */
     public static final class StyleRegistry {
 
         private StyleRegistry() {
         }
 
-        /** 実際に使われている kind ごとに、既定値へ spec.kinds を上書きしたスタイルを返す。 */
+        /** kindスタイル解決処理。 */
         public static Map<String, KindStyle> resolveKindStyles(FlowSpec spec) {
             Map<String, KindStyle> result = new LinkedHashMap<>();
             KindStyle base = KindStyle.defaults();
@@ -510,7 +471,7 @@ public class DiagramService {
             return result;
         }
 
-        /** 実際に使われている type ごとに、既定値へ spec.types を上書きしたスタイルを返す。 */
+        /** typeスタイル解決処理。 */
         public static Map<String, ActionTypeStyle> resolveTypeStyles(FlowSpec spec) {
             Map<String, ActionTypeStyle> result = new LinkedHashMap<>();
             ActionTypeStyle base = ActionTypeStyle.defaults();
@@ -528,16 +489,12 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 箱と矢印を実際に画面のどこへ置くかを計算するクラス。箱をどの列・どの高さに並べるか、
-     * 矢印をどういう経路（直進・折れ線・迂回路）で引くかを、すべてピクセル単位で決める。
-     * このファイルの中で一番複雑な計算を担当している部分。
-     */
+    /** レイアウト計算処理。 */
     public static class LayoutEngine {
 
         private static final int LEGEND_HEIGHT = 76;
 
-        /** 矢印1本分の「行き先が決まった候補」。複数本をまとめてレーン（通り道）を割り振るために使う。 */
+        /** EdgeCandidateモデル。 */
         private record EdgeCandidate(int sx, int sy, Layout.NodeBox to, int ty) {
         }
 
@@ -547,11 +504,7 @@ public class DiagramService {
             this.theme = theme;
         }
 
-        /**
-         * 図全体の配置を計算する。流れとしては、①各箱を何列目に置くか決める → ②列と行の位置から
-         * 箱のxy座標・大きさを決める → ③各ボタンから出る矢印の経路（まっすぐ進む・折れる・
-         * 他の箱を避けて迂回する）を1本ずつ決める、という順番で進む。
-         */
+        /** レイアウト構築処理。 */
         public Layout build(FlowSpec spec) {
             Layout layout = new Layout();
             layout.title = spec.displayTitle();
@@ -564,7 +517,7 @@ public class DiagramService {
 
             int[] columns = assignColumns(states, indexByLabel);
 
-            // --- ① 各箱を画面上に配置する ---
+            // --- 箱配置処理 ---
             int titleAreaHeight = layout.title.isEmpty() ? 0 : 52;
             int topY = theme.canvasPadding + titleAreaHeight;
             Map<Integer, Integer> nextYByColumn = new HashMap<>();
@@ -589,21 +542,19 @@ public class DiagramService {
                 boxes.put(s.label, box);
             }
 
-            // 複数の箱をまたいで遠回りする矢印は、途中の箱の下をくぐる専用の通り道を使う。
-            // その通り道の高さを決めるため、ここまでに配置した箱の一番下のy座標を覚えておく
+            // 迂回レーン高さ計算用の最大bottom座標
             int realNodesMaxBottom = 0;
             for (Layout.NodeBox n : layout.nodes) {
                 realNodesMaxBottom = Math.max(realNodesMaxBottom, n.bottom());
             }
             int skipLaneIndex = 0;
 
-            // --- ② 各ボタンから出る矢印の経路を決める（後戻りする矢印は複製の箱を新しく作る） ---
+            // --- 矢印経路決定処理 ---
             for (StateSpec s : states) {
                 Layout.NodeBox from = boxes.get(s.label);
                 List<ActionSpec> actions = s.safeActions();
 
-                // まず矢印の行き先（実在の箱、または後戻り用の複製の箱）だけを先に確定させる。
-                // 同じ箱から出る矢印同士が重ならないよう通り道を振り分けるのは、この後にまとめて行う
+                // 矢印行き先確定処理
                 List<EdgeCandidate> candidates = new ArrayList<>();
                 for (int j = 0; j < actions.size(); j++) {
                     ActionSpec a = actions.get(j);
@@ -615,20 +566,18 @@ public class DiagramService {
                         Layout.NodeBox to;
                         boolean skipsColumns;
                         if (target.column > from.column) {
-                            to = target; // 前へ進む矢印: 実在の箱がそのまま行き先
+                            to = target; // 前進矢印
                             skipsColumns = (target.column - from.column) > 1;
                         } else {
-                            // 自分自身、または手前の列へ戻る矢印: 実際の箱へは線を引かず、
-                            // 起点のすぐ右隣に「行き先はここですよ」を示す複製の箱を新しく作る
+                            // 後戻り矢印: 複製の箱を作成
                             to = cloneNode(target.state, from.column + 1, nextYByColumn, topY);
                             layout.nodes.add(to);
-                            skipsColumns = false; // 複製の箱は必ず起点の隣の列に置くので、列を飛び越さない
+                            skipsColumns = false;
                         }
                         int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + theme.headerHeight / 2;
 
                         if (skipsColumns) {
-                            // 2列以上先へ直接進む矢印は、途中の箱の背後を線が通り抜けて見えなく
-                            // ならないよう、すべての箱より下を通る迂回路を経由させる
+                            // 迂回レーン経由処理
                             int laneY = realNodesMaxBottom + SKIP_LANE_GAP + skipLaneIndex * SKIP_LANE_PITCH;
                             skipLaneIndex++;
                             Layout.EdgeRoute e = new Layout.EdgeRoute();
@@ -643,10 +592,7 @@ public class DiagramService {
                     }
                 }
 
-                // 同じ箱から出る複数の矢印が、途中の折れ曲がり部分で重なって見分けがつかなくなら
-                // ないよう、通り道（レーン）を少しずつずらす。ずらし方のコツ: 行き先が下にある
-                // 矢印ほど起点寄りの内側の通り道を、行き先が上にある矢印ほど外側の通り道を使うと、
-                // 矢印同士が交差しない（逆にすると交差してしまう）
+                // レーン割り当て処理
                 candidates.sort(Comparator.comparingInt(EdgeCandidate::ty).reversed());
                 int laneCount = candidates.size();
                 for (int lane = 0; lane < laneCount; lane++) {
@@ -677,13 +623,13 @@ public class DiagramService {
             return layout;
         }
 
-        /** 後戻りする矢印の行き先として使う、複製の箱（名前だけのテキスト表示）を新しく作る。 */
+        /** 複製箱生成処理。 */
         private Layout.NodeBox cloneNode(StateSpec target, int column, Map<Integer, Integer> nextYByColumn, int topY) {
             Layout.NodeBox box = new Layout.NodeBox();
             box.state = target;
             box.column = column;
             box.width = theme.nodeWidth;
-            box.height = CLONE_TEXT_HEIGHT; // テキスト表示のみ
+            box.height = CLONE_TEXT_HEIGHT;
             box.clone = true;
             placeInColumn(box, nextYByColumn, topY);
             return box;
@@ -696,7 +642,7 @@ public class DiagramService {
             nextYByColumn.put(box.column, y + box.height + theme.rowGap);
         }
 
-        /** 箱の高さを計算する。ボタンの名前がすべて1行に収まる前提の簡易版（主にテスト用）。 */
+        /** 箱高さ計算処理（簡易版）。 */
         public int nodeHeight(int actionCount) {
             if (actionCount == 0) {
                 return theme.headerHeight;
@@ -720,7 +666,7 @@ public class DiagramService {
                     + theme.nodePaddingBottom;
         }
 
-        /** j番目のボタンの中央のy座標（＝そこから出る矢印の起点）。それより前のボタンの高さを積み上げて求める。 */
+        /** 矢印起点y座標計算処理。 */
         public int actionAnchorY(Layout.NodeBox box, int j) {
             int y = box.y + theme.headerHeight + theme.nodePaddingTop;
             for (int i = 0; i < j; i++) {
@@ -729,11 +675,7 @@ public class DiagramService {
             return y + box.actionRowHeights.get(j) / 2;
         }
 
-        /**
-         * ボタン1個の実際の高さを見積もる。名前がボタンの横幅に収まらない場合は折り返して
-         * 複数行になるため、おおよその行数から高さを逆算する。実際のフォントの文字幅は
-         * 測れないので、全角文字は1文字分、半角文字は0.55文字分の幅として概算する。
-         */
+        /** ボタン高さ見積もり処理。 */
         private int actionRowHeight(ActionSpec a) {
             int availableWidth = theme.nodeWidth - ACTION_LABEL_H_RESERVE;
             if (availableWidth <= 0) {
@@ -756,7 +698,7 @@ public class DiagramService {
             return (int) Math.ceil(widthEm * fontSizePx);
         }
 
-        /** 漢字・ひらがな・カタカナ・全角記号など、横幅が広い文字かどうかの簡易判定。 */
+        /** 全角文字判定処理。 */
         private static boolean isWideChar(char c) {
             return (c >= 0x1100 && c <= 0x115F)
                     || (c >= 0x2E80 && c <= 0xA4CF)
@@ -766,11 +708,7 @@ public class DiagramService {
                     || (c >= 0xFFE0 && c <= 0xFFE6);
         }
 
-        /**
-         * 各箱を何列目に置くかを決める。「AからBへ、BからAへ」のような行き来がある場合でも
-         * 無限ループに陥らないよう、まず「後戻りする矢印」を一旦除いて一方通行の関係図にし、
-         * そこから各箱までの最長経路の長さで列番号を決める。
-         */
+        /** 列番号割り当て処理。 */
         private int[] assignColumns(List<StateSpec> states, Map<String, Integer> indexByLabel) {
             int n = states.size();
 
@@ -782,7 +720,7 @@ public class DiagramService {
                 for (ActionSpec a : states.get(i).safeActions()) {
                     for (String next : a.effectiveNextTargets()) {
                         if (next.equals(states.get(i).label)) {
-                            continue; // 自己ループは列割り当てに使わない
+                            continue; // 自己ループ除外
                         }
                         Integer ti = indexByLabel.get(next);
                         if (ti != null && ti != i) {
@@ -856,11 +794,7 @@ public class DiagramService {
             return roots;
         }
 
-        /**
-         * 「後戻りする矢印」（深さ優先で箱をたどっていったときに、今たどっている途中の箱へ
-         * 戻ってくるような矢印＝ループを作る矢印）を見つける。戻り値は
-         * [箱の番号][その箱から出る何本目の矢印か] で引ける、該当するかどうかのフラグ表。
-         */
+        /** 後戻り矢印検出処理。 */
         private boolean[][] markBackEdges(int n, List<List<Integer>> adj, List<Integer> roots) {
             boolean[][] isBackEdge = new boolean[n][];
             for (int i = 0; i < n; i++) {
@@ -907,22 +841,13 @@ public class DiagramService {
         private static final int SKIP_LANE_PITCH = 14;
         private static final int SKIP_LANE_STAGGER = 8;
         public static final int CLONE_TEXT_HEIGHT = 28;
-        /** ボタンの名前が収まる横幅を見積もる際に、ボタンの左右の余白分として差し引く長さ。 */
+        /** ボタン左右余白長。 */
         private static final int ACTION_LABEL_H_RESERVE = 44;
-        /**
-         * ボタンの右端から箱の右端までをつなぐ短い線（接続スタブ）の長さ。矢印の線はボタンから
-         * 続いて見えるように、箱の見た目上の余白をこの線で埋めている。CSSの指定だけだと
-         * ボタンの枠線の太さ次第で位置がずれてしまうため、矢印の線と全く同じ座標計算（箱の右端
-         * を基準にする）で正確に描く。
-         */
+        /** 接続スタブ長。 */
         public static final int ACTION_STUB_LENGTH = 12;
         private static final int ACTION_LABEL_V_PADDING = 12;
 
-        /**
-         * 前へ進む矢印の経路を決める。折れ曲がる位置はできるだけ終点に近いところにする。
-         * これにより、起点を出てすぐは各ボタンの高さのまま横に伸びるだけになり、
-         * 同じ箱から出る複数の矢印が序盤で重なって見分けづらくなるのを防げる。
-         */
+        /** 前進矢印経路計算処理。 */
         private void routeForward(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int lane, int laneCount) {
             if (sy == ty) {
                 e.segments.add(Layout.Segment.h(sx, tx, sy));
@@ -937,10 +862,7 @@ public class DiagramService {
             e.segments.add(Layout.Segment.h(mx, tx, ty));
         }
 
-        /**
-         * 2列以上先へ直接進む矢印の経路を決める。途中の列にある箱の背後を線が通り抜けて
-         * 見えなくならないよう、すべての箱より下を通る迂回路を経由させる。
-         */
+        /** 迂回矢印経路計算処理。 */
         private void routeSkip(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int laneY, int laneOrdinal) {
             int outX = sx + 20 + laneOrdinal * SKIP_LANE_STAGGER;
             int inX = tx - 20 - laneOrdinal * SKIP_LANE_STAGGER;
@@ -952,12 +874,7 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 配置計算の結果をもとに、図の本体（箱・矢印・凡例）をHTMLとして組み立てるクラス。
-     * 画像やSVGは使わず、すべて `div` 要素と座標指定のスタイルだけで表現する。
-     * 色については {@link StyleRegistry} が解決した結果をそのままCSSに変換するだけで、
-     * このクラス自身は「どの種類が何色か」という意味までは判断しない。
-     */
+    /** HTML組み立て処理。 */
     public static class HtmlDiagramRenderer {
 
         private final Theme theme;
@@ -971,7 +888,7 @@ public class DiagramService {
             this.typeStyles = typeStyles;
         }
 
-        /** 図全体を囲む `<div class="fd-canvas">…</div>` のHTML文字列を組み立てて返す。 */
+        /** 図全体HTML組み立て処理。 */
         public String render(Layout layout) {
             StringBuilder sb = new StringBuilder(8192);
             sb.append("<div class=\"fd-canvas\" style=\"width:").append(layout.canvasWidth)
@@ -998,12 +915,7 @@ public class DiagramService {
             return sb.toString();
         }
 
-        /**
-         * この図の中で実際に使われている種類（kind/type）ごとの色を、CSSとして出力する。
-         * 色の決定自体は {@link #kindStyles}/{@link #typeStyles} が既に済ませているので、
-         * ここではそれをCSSの文字列に変換するだけ。種類名をそのままクラス名に使うと日本語などで
-         * 壊れるおそれがあるため、{@link Html#labelToken} で安全な文字列に変換したものを使う。
-         */
+        /** kind/type別CSS出力処理。 */
         private void renderKindTypeCss(StringBuilder sb) {
             sb.append("  <style>\n");
             for (Map.Entry<String, KindStyle> e : kindStyles.entrySet()) {
@@ -1034,11 +946,7 @@ public class DiagramService {
             sb.append("  </style>\n");
         }
 
-        /**
-         * 複製の箱（後戻り先を示すテキスト）にカーソルを合わせたとき、対応する元の箱も一緒に
-         * アウトラインで強調表示するためのCSSを出力する。JavaScriptは使わず、CSSの `:has()` で
-         * 「このあとに自分と同じ名前の複製がホバーされているか」を判定して実現している。
-         */
+        /** 複製箱ホバー強調CSS出力処理。 */
         private void renderCloneHighlightCss(StringBuilder sb, Layout layout) {
             Set<String> labelsWithClone = new LinkedHashSet<>();
             for (Layout.NodeBox n : layout.nodes) {
@@ -1058,12 +966,7 @@ public class DiagramService {
             sb.append("  </style>\n");
         }
 
-        /**
-         * 1本の矢印（複数の線分のつながり）をHTMLとして描く。線分同士のつなぎ目に隙間ができたり、
-         * 逆にはみ出して見えたりしないよう、隣り合う線分とくっつく側の端だけを少し延長して描く。
-         * 矢印の先端（三角形）に接続する最後の線分だけは、先端ぎりぎりまで伸ばすと三角形からはみ
-         * 出て見えてしまうため、先端の手前（三角形の根元）で止める。
-         */
+        /** 矢印HTML描画処理。 */
         private void renderEdge(StringBuilder sb, Layout.EdgeRoute e) {
             sb.append("  <div class=\"edge\" data-from=\"").append(Html.esc(e.fromStateLabel)).append("\">\n");
             List<Layout.Segment> segs = e.segments;
@@ -1075,8 +978,7 @@ public class DiagramService {
                 int startY = s.y;
                 int endX = s.horizontal ? s.x + s.width : s.x;
                 int endY = s.horizontal ? s.y : s.y + s.height;
-                // 一番最初の線分の始まる側は、ボタン側の短い接続線とぴったり繋がるように
-                // 常に延長する
+                // 先頭線分は常に延長
                 boolean isFirst = i == 0;
                 boolean extendStart = isFirst
                         || touchesEndpoint(startX, startY, prev) || touchesEndpoint(startX, startY, next);
@@ -1105,11 +1007,7 @@ public class DiagramService {
             sb.append("  </div>\n");
         }
 
-        /**
-         * (x,y) が隣の線分 {@code other} の端点のどちらかと同じ場所かどうかを判定する。
-         * 同じ場所＝線分同士がつながる継ぎ目なので延長してよく、同じ場所でなければ経路全体の
-         * 端（起点または先端）なので延長しない、という判断に使う。
-         */
+        /** 継ぎ目判定処理。 */
         private static boolean touchesEndpoint(int x, int y, Layout.Segment other) {
             if (other == null) {
                 return false;
@@ -1131,7 +1029,7 @@ public class DiagramService {
             return base + "px";
         }
 
-        /** 後戻り先を示す複製の箱を、名前だけのテキストとして描く（通常の箱のような枠は付けない）。 */
+        /** 複製箱描画処理。 */
         private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {
             sb.append("  <div class=\"node-clone-ref lbl-").append(Html.labelToken(n.state.label))
               .append("\" style=\"left:").append(n.x).append("px;top:").append(n.y)
@@ -1139,7 +1037,7 @@ public class DiagramService {
               .append(Html.esc(n.state.label)).append("</div>\n");
         }
 
-        /** 1つの箱（見出し部分＋中のボタン一覧）をHTMLとして描く。複製の箱の場合は別の描き方に回す。 */
+        /** 箱描画処理。 */
         private void renderNode(StringBuilder sb, Layout.NodeBox n) {
             if (n.clone) {
                 renderCloneRef(sb, n);
@@ -1185,10 +1083,7 @@ public class DiagramService {
             }
         }
 
-        /**
-         * ボタンの見た目上の右端から箱の右端までをつなぐ短い線（接続スタブ）を描く。箱の
-         * 中に入れ子にすると座標の基準がずれてしまうため、図全体と同じ兄弟要素として描く。
-         */
+        /** 接続スタブ描画処理。 */
         private void renderActionStub(StringBuilder sb, Layout.NodeBox n, int j) {
             int right = n.right();
             int left = right - LayoutEngine.ACTION_STUB_LENGTH;
@@ -1198,7 +1093,7 @@ public class DiagramService {
               .append(LayoutEngine.ACTION_STUB_LENGTH).append("px\"></div>\n");
         }
 
-        /** 図の下に出す凡例を描く。実際に使われている種類（kind/type）だけを一覧表示する。 */
+        /** 凡例描画処理。 */
         private void renderLegend(StringBuilder sb, Layout layout) {
             if (!Boolean.TRUE.equals(theme.showLegend)) {
                 return;
@@ -1235,10 +1130,7 @@ public class DiagramService {
         private static final int LEGEND_HINT_OFFSET = 24;
     }
 
-    /**
-     * 組み立てたCSSとHTML本体を、1枚の完結したHTMLページに仕上げるクラス。
-     * 外部サイトのCSSや画像などを一切読み込まない、単体で開けるファイルにする。
-     */
+    /** HTMLページ組み立て処理。 */
     public static class HtmlPageWriter {
 
         private final Theme theme;
@@ -1247,7 +1139,7 @@ public class DiagramService {
             this.theme = theme;
         }
 
-        /** ブラウザでそのまま開ける1枚もののHTMLを組み立てる。JavaScriptは一切含まない。 */
+        /** ページHTML組み立て処理。 */
         public String page(String title, String css, String canvasHtml) {
             String pageTitle = (title == null || title.isBlank()) ? "Flow Diagram" : title;
             return """
@@ -1276,12 +1168,7 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 見た目設定（Theme）から、レイアウト・文字サイズなどに関するCSSを組み立てるクラス。
-     * 種類（kind/type）ごとの色はリクエストによって変わるためここでは扱わず、
-     * {@link HtmlDiagramRenderer} の方で別途出力する。矢印の線など種類に紐付かない共通色は
-     * {@link Palette} の定数をそのまま埋め込む。
-     */
+    /** CSS組み立て処理。 */
     public static class CssBuilder {
 
         private final Theme theme;
@@ -1328,18 +1215,17 @@ public class DiagramService {
                     font-size:var(--title-font-size);font-weight:700;color:var(--title-color);\
                     letter-spacing:.02em;}
 
-                    /* --- 大枠。色は kind ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
+                    /* --- 箱の大枠 --- */
                     .fd-canvas .node{position:absolute;z-index:2;border-radius:10px;\
                     box-shadow:var(--node-shadow);border:1.5px solid transparent;\
                     transition:outline-color .15s;outline:3px solid transparent;outline-offset:3px;}
-                    /* --- 複製参照テキスト（後退辺・自己ループの終端） --- */
+                    /* --- 複製参照テキスト --- */
                     .fd-canvas .node-clone-ref{position:absolute;z-index:2;display:flex;\
                     align-items:center;gap:4px;font-size:var(--state-font-size);color:#6b7280;\
                     font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
                     text-overflow:ellipsis;padding:0 6px;}
                     .fd-canvas .node-clone-ref:hover{color:var(--edge-color);}
-                    /* 箱（.node）全体には overflow:hidden を付けていないため、見出し部分の
-                       背景を箱の角丸に合わせて切り抜くための丸みをここで自前で付けている */
+                    /* 見出し部分の角丸調整 */
                     .fd-canvas .node-header{min-height:var(--header-height);display:flex;\
                     flex-direction:column;justify-content:center;gap:2px;padding:6px 12px;\
                     border-radius:8.5px 8.5px 0 0;}
@@ -1349,7 +1235,7 @@ public class DiagramService {
                     .fd-canvas .state-label{font-size:var(--state-font-size);font-weight:700;\
                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-                    /* --- アクション。色は type ごとに動的CSS（HtmlDiagramRenderer）で決まる --- */
+                    /* --- アクション --- */
                     .fd-canvas .node-actions{display:flex;flex-direction:column;gap:var(--action-gap);\
                     padding:var(--node-padding-top) 10px var(--node-padding-bottom);}
                     .fd-canvas .action{min-height:var(--action-height);\
@@ -1357,12 +1243,11 @@ public class DiagramService {
                     padding:4px 12px;border-radius:8px;font-size:var(--action-font-size);}
                     .fd-canvas .action .action-label{flex:1 1 auto;white-space:normal;\
                     overflow-wrap:anywhere;line-height:1.35;}
-                    /* ボタンの右端から箱の右端までの隙間を埋める接続スタブ用のスタイル。
-                       ボタン自体の余白・丸みは変えず、線がボタンから続いているように見せるためのもの */
+                    /* --- 接続スタブ --- */
                     .fd-canvas .action-stub{position:absolute;z-index:2;\
                     height:var(--edge-w);background:var(--edge-color);}
 
-                    /* --- 関係線（すべて薄い青の実線で統一） --- */
+                    /* --- 関係線 --- */
                     .fd-canvas .edge{position:absolute;left:0;top:0;z-index:1;}
                     .fd-canvas .seg{position:absolute;}
                     .fd-canvas .seg.h{border-top:var(--edge-w) solid var(--edge-color);}
@@ -1372,7 +1257,7 @@ public class DiagramService {
                     border-top:calc(var(--arrow-size) * .6) solid transparent;\
                     border-bottom:calc(var(--arrow-size) * .6) solid transparent;}
 
-                    /* --- 凡例。kind/typeの色は各項目のinline styleで指定する --- */
+                    /* --- 凡例 --- */
                     .fd-canvas .legend{position:absolute;display:flex;flex-wrap:wrap;gap:18px;\
                     align-items:center;font-size:var(--action-font-size);color:#4a5568;}
                     .fd-canvas .legend .item{display:flex;align-items:center;gap:6px;}
@@ -1388,17 +1273,13 @@ public class DiagramService {
         }
     }
 
-    /**
-     * 種類（kind/type）に関係なく図全体で共通して使う色の定数置き場。種類ごとの色は
-     * リクエスト側（{@link KindStyle}/{@link ActionTypeStyle}）で指定するが、矢印の色のように
-     * どの種類にも属さない共通の色だけはここに固定で持つ。
-     */
+    /** 共通色定数。 */
     public static final class Palette {
 
         private Palette() {
         }
 
-        // --- 関係線（すべて薄い青の実線で統一） ---
+        // --- 関係線 ---
         public static final String EDGE_COLOR = "#7fb8ee";
     }
 
@@ -1408,7 +1289,7 @@ public class DiagramService {
         private Html() {
         }
 
-        /** 文字列の中の `& < > " '` をHTMLとして安全な表記に置き換える。 */
+        /** HTMLエスケープ処理。 */
         public static String esc(String s) {
             if (s == null) {
                 return "";
@@ -1428,10 +1309,7 @@ public class DiagramService {
             return sb.toString();
         }
 
-        /**
-         * CSS の値として安全な文字列だけを通す。
-         * `}` や `<` などを含む値は CSS/HTML を壊すため、既定色に落とす。
-         */
+        /** CSS値検証処理。 */
         public static String cssValue(String raw, String fallback) {
             if (raw == null || raw.isBlank()) {
                 return fallback;
@@ -1445,19 +1323,13 @@ public class DiagramService {
             return raw;
         }
 
-        /**
-         * label を CSS クラス名の一部として使える安全なトークンに変換する。
-         * label は日本語などの任意の文字列になりうるため、文字を残そうとせず
-         * {@link String#hashCode()}（Java仕様で計算式が固定されており実行間で安定）を
-         * 16進数化するだけにする。これにより非ASCII文字だけの label 同士が
-         * 同じトークンに潰れて衝突する事故を避ける。
-         */
+        /** labelトークン変換処理。 */
         public static String labelToken(String raw) {
             String s = raw == null ? "" : raw;
             return "l" + Integer.toHexString(s.hashCode());
         }
 
-        /** 小数の余分な .0 を落として px 値にする。 */
+        /** px値変換処理。 */
         public static String px(double v) {
             if (v == Math.rint(v)) {
                 return ((long) v) + "px";

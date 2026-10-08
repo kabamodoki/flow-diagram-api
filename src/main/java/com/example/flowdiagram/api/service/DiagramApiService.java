@@ -22,14 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * コントローラから渡されたリクエストのデータを、実際の処理を行う {@link DiagramService} が
- * 扱える形に変換して橋渡しする役割のクラス。
- *
- * <p>リクエストのデータ構造（entity）と、処理用に内部で使うデータ構造（model）は別物として
- * 分けているため、このクラスで両者を変換する。生成されたHTMLをレスポンスとして組み立てて
- * 返すのもこのクラスの仕事。</p>
- */
+/** APIサービス。 */
 @Service
 public class DiagramApiService {
 
@@ -46,7 +39,7 @@ public class DiagramApiService {
         return ResponseEntity.ok().header("Content-Type", HTML).body(html);
     }
 
-    // --- ここから下は、リクエストのデータ（entity）を処理用のデータ（model）に詰め替える処理 ---
+    // --- entity→model変換処理 ---
 
     private static FlowSpec toModel(FlowSpecEntity e) {
         if (e == null) {

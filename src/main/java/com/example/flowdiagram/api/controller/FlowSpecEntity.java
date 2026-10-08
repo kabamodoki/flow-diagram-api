@@ -6,14 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import java.util.Map;
 
-/**
- * リクエストのJSONをそのまま受け取るための入れ物（entity）のクラス。状態遷移図1件分の定義
- * （タイトル・見た目の設定・各ステータスの一覧）をまるごと表す。
- *
- * <p>ここに並んでいるクラス群はJSONの形をそのまま写しただけのデータの入れ物で、中身の意味を
- * 判断したり処理したりすることは一切しない（それはmodel側の役割）。JSONの入れ子構造に合わせて、
- * 関連するクラスをすべてこのファイルの中にネストクラスとしてまとめている。</p>
- */
+/** リクエストentity。 */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FlowSpecEntity {
 
@@ -23,7 +16,7 @@ public class FlowSpecEntity {
     public Map<String, ActionTypeStyleEntity> types;
     public List<StateSpecEntity> states;
 
-    /** 1つのステータス（または手続き）の定義。中に複数のアクションを持てる。 */
+    /** ステータスentity。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class StateSpecEntity {
 
@@ -39,7 +32,7 @@ public class FlowSpecEntity {
         }
     }
 
-    /** ステータスの中の1つのボタン（アクション）の定義。押した後どこへ遷移するかを持つ。 */
+    /** アクションentity。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ActionSpecEntity {
 
@@ -59,7 +52,7 @@ public class FlowSpecEntity {
         }
     }
 
-    /** ステータスの種類（kind）ごとの色・見た目の指定。 */
+    /** kind見た目entity。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class KindStyleEntity {
         public String headerBackground;
@@ -68,7 +61,7 @@ public class FlowSpecEntity {
         public String textColor;
     }
 
-    /** アクションの種類（type）ごとの色・見た目の指定。 */
+    /** type見た目entity。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ActionTypeStyleEntity {
         public String background;
@@ -78,10 +71,7 @@ public class FlowSpecEntity {
         public String shadow;
     }
 
-    /**
-     * レイアウトや文字サイズなどの見た目設定の上書き指定。全項目が任意で、指定しなければ
-     * 既定値が使われる（この既定値の決定処理自体はここでは行わない）。
-     */
+    /** テーマentity。 */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ThemeEntity {
 

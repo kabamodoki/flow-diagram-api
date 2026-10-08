@@ -14,14 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * 状態遷移図を生成するAPIの入り口となるクラス。HTTPリクエストを受け取り、実際の処理は
- * {@link DiagramApiService} に委ねる。自分では画面の組み立てなどの重い処理は行わない。
- *
- * <p>ただし1点だけ、リクエストの中身を奥の処理まで渡す前にチェックしている: アクションの
- * 遷移先（next）が、実在するステータス名（label）を指しているかどうか。ここで弾かないと、
- * 存在しない遷移先が奥の方で初めて発覚し、原因の分かりにくいエラーになってしまうため。</p>
- */
+/** APIコントローラ。 */
 @RestController
 public class DiagramController {
 
@@ -39,10 +32,7 @@ public class DiagramController {
         return service.diagram(spec);
     }
 
-    /**
-     * 全アクションの遷移先（next）が、実在するステータス名（label）を指しているかをチェックする。
-     * 存在しない名前を指しているものが1件でもあれば、その場でエラーにして処理を中断する。
-     */
+    /** next参照チェック処理。 */
     private void validateNextReferencesExist(FlowSpecEntity spec) {
         if (spec == null || spec.states == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "states が指定されていません");

@@ -2,7 +2,7 @@ package com.example.flowdiagram;
 
 import java.util.List;
 
-/** 入力データが不正なときに投げる例外。違反内容を複数まとめて持てる。 */
+/** 入力エラー例外。 */
 public class FlowDiagramException extends RuntimeException {
 
     private final List<String> messages;
