@@ -1033,7 +1033,7 @@ public class DiagramService {
         private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {
             sb.append("  <div class=\"node-clone-ref lbl-").append(Html.labelToken(n.state.label))
               .append("\" style=\"left:").append(n.x).append("px;top:").append(n.y)
-              .append("px;width:").append(n.width).append("px\">")
+              .append("px;max-width:").append(n.width).append("px\">")
               .append(Html.esc(n.state.label)).append("</div>\n");
         }
 
@@ -1221,8 +1221,8 @@ public class DiagramService {
                     transition:outline-color .15s;outline:3px solid transparent;outline-offset:3px;}
                     /* --- 複製参照テキスト --- */
                     .fd-canvas .node-clone-ref{position:absolute;z-index:2;display:flex;\
-                    align-items:center;gap:4px;font-size:var(--state-font-size);color:#6b7280;\
-                    font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
+                    width:fit-content;align-items:center;gap:4px;font-size:var(--state-font-size);\
+                    color:#6b7280;font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
                     text-overflow:ellipsis;padding:0 6px;}
                     .fd-canvas .node-clone-ref:hover{color:var(--edge-color);}
                     /* 見出し部分の角丸調整 */
