@@ -742,6 +742,8 @@ public class DiagramService {
                 }
             }
 
+            // 複数の経路元から合流する場合は、最短路(到達ホップ数が最小)の列に合わせる。
+            // それより後に届く矢印は、合流先の列が自分以下になるため後戻り矢印として扱われる
             int[] columns = new int[n];
             boolean[] settled = new boolean[n];
             Deque<Integer> queue = new ArrayDeque<>();
@@ -759,10 +761,10 @@ public class DiagramService {
                         continue;
                     }
                     int v = targets.get(k);
-                    columns[v] = Math.max(columns[v], columns[u] + 1);
-                    if (--dagInDegree[v] == 0) {
-                        queue.add(v);
+                    if (!settled[v]) {
+                        columns[v] = columns[u] + 1;
                         settled[v] = true;
+                        queue.add(v);
                     }
                 }
             }
@@ -1033,7 +1035,7 @@ public class DiagramService {
         private void renderCloneRef(StringBuilder sb, Layout.NodeBox n) {
             sb.append("  <div class=\"node-clone-ref lbl-").append(Html.labelToken(n.state.label))
               .append("\" style=\"left:").append(n.x).append("px;top:").append(n.y)
-              .append("px;max-width:").append(n.width).append("px\">")
+              .append("px\">")
               .append(Html.esc(n.state.label)).append("</div>\n");
         }
 
@@ -1222,8 +1224,7 @@ public class DiagramService {
                     /* --- 複製参照テキスト --- */
                     .fd-canvas .node-clone-ref{position:absolute;z-index:2;display:flex;\
                     width:fit-content;align-items:center;gap:4px;font-size:var(--state-font-size);\
-                    color:#6b7280;font-style:italic;cursor:default;white-space:nowrap;overflow:hidden;\
-                    text-overflow:ellipsis;padding:0 6px;}
+                    color:#6b7280;font-style:italic;cursor:default;white-space:nowrap;padding:0 6px;}
                     .fd-canvas .node-clone-ref:hover{color:var(--edge-color);}
                     /* 見出し部分の角丸調整 */
                     .fd-canvas .node-header{min-height:var(--header-height);display:flex;\

@@ -43,6 +43,11 @@
           "type": "flow",
           "label": "分岐",
           "next": "G0-S2"
+        },
+        {
+          "type": "flow",
+          "label": "end",
+          "next": "end"
         }
       ]
     },
@@ -84,8 +89,8 @@
         },
         {
           "type": "flow",
-          "label": "次グループへ",
-          "next": "G1-S0"
+          "label": "end",
+          "next": "end"
         }
       ]
     },
@@ -166,9 +171,9 @@
           "next": "G2-S1"
         },
         {
-          "type": "button",
-          "label": "分岐",
-          "next": "G2-S2"
+          "type": "flow",
+          "label": "end",
+          "next": "end"
         }
       ]
     },
@@ -230,8 +235,8 @@
         },
         {
           "type": "flow",
-          "label": "分岐",
-          "next": "G3-S2"
+          "label": "end",
+          "next": "end"
         }
       ]
     },
@@ -905,6 +910,10 @@
     },
     {
       "label": "G13-S4",
+      "kind": "ステータス"
+    },
+    {
+      "label": "end",
       "kind": "ステータス"
     }
   ]

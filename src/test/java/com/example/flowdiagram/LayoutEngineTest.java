@@ -67,12 +67,12 @@ class LayoutEngineTest {
     }
 
     @Test
-    void mergeTakesLongestPathColumn() {
+    void mergeTakesShortestPathColumn() {
         Map<String, Layout.NodeBox> n = realNodes(spec(
                 state("a", go("x", "b"), go("z", "c")),
                 state("b", go("y", "c")),
                 state("c")));
-        assertEquals(2, n.get("c").column);
+        assertEquals(1, n.get("c").column, "cへはaから直接(1手)の方が短いのでその列になる");
     }
 
     @Test
@@ -242,23 +242,24 @@ class LayoutEngineTest {
     }
 
     @Test
-    void edgeSkippingTwoOrMoreColumnsUsesDetourBelowAllNodes() {
-        // basic-design.md 6.4.1 v3.2: a→d は a(col0)→b(col1)→c(col2)→d(col3) を飛び越すので、
-        // 中間列(b,c)の高さを通らない迂回経路（実ノード最下端より下の5セグメント）になる
+    void directEdgeWinsOverLongerPathAndLongerPathBecomesBackReference() {
+        // dへはaから直接(1手)の方がa→b→c→d(3手)より短いので、dはaの隣の列に来る。
+        // 遠回りの c→d は dより手前(同じか先)の列になるため、後戻り矢印(複製)になる
+        Map<String, Layout.NodeBox> n = realNodes(spec(
+                state("a", go("skip", "d"), go("x", "b")),
+                state("b", go("y", "c")),
+                state("c", go("z", "d")),
+                state("d")));
+        assertEquals(1, n.get("d").column);
+        assertEquals(2, n.get("c").column);
+
         Layout l = buildLayout(spec(
                 state("a", go("skip", "d"), go("x", "b")),
                 state("b", go("y", "c")),
                 state("c", go("z", "d")),
                 state("d")));
-        Layout.EdgeRoute skip = l.edges.stream()
-                .filter(e -> e.fromStateLabel.equals("a") && e.segments.size() == 5)
-                .findFirst().orElseThrow();
-
-        int realNodesMaxBottom = l.nodes.stream()
-                .filter(n -> !n.clone).mapToInt(Layout.NodeBox::bottom).max().orElseThrow();
-        Layout.Segment detourLane = skip.segments.stream()
-                .filter(s -> s.horizontal).skip(1).findFirst().orElseThrow();
-        assertTrue(detourLane.y > realNodesMaxBottom, "迂回レーンはどの実ノードよりも下を通ること");
+        boolean cloneForD = l.nodes.stream().anyMatch(box -> box.clone && box.state.label.equals("d"));
+        assertTrue(cloneForD, "c→d は後戻り矢印として複製ノードになる");
     }
 
     @Test

@@ -13,7 +13,8 @@
       "label": "手続きA",
       "kind": "手続き",
       "actions": [
-        { "type": "flow", "label": "フロー1", "next": "手続きB" }
+        { "type": "flow", "label": "フロー1", "next": "手続きB" },
+        { "type": "flow", "label": "フロー1", "next": "手続きX" }
       ]
     },
     {
@@ -23,12 +24,13 @@
         { "type": "flow", "label": "フロー2", "next": "手続きC" }
       ]
     },
+    { "label": "手続きX", "kind": "手続き" },
     {
       "label": "手続きC",
       "kind": "手続き",
       "actions": [
         { "type": "flow", "label": "フロー3", "next": "手続きD" },
-        { "type": "flow", "label": "フロー4" },
+        { "type": "flow", "label": "フロー4", "next": "手続きX"  },
         { "type": "flow", "label": "フロー5" },
         { "type": "flow", "label": "フロー6" },
         { "type": "flow", "label": "フロー7" }
