@@ -1,41 +1,20 @@
 {
-  "title": "サンプル2（フロー型）",
-  "kinds": {
-    "ステータス": { "headerBackground": "#eaf4ff", "background": "#f8fbfe", "border": "#cfe3f5", "textColor": "#2c6291" },
-    "手続き":     { "headerBackground": "#eaf8ee", "background": "#f8fcf9", "border": "#cdeada", "textColor": "#2f7a52" }
-  },
-  "types": {
-    "button": { "background": "#ffffff", "border": "#c4c9d0", "borderWidth": 1.5, "textColor": "#2d3748", "shadow": "0 1px 2px rgba(15,23,42,.10)" },
-    "flow":   { "background": "#f8fbfe", "border": "#7fb8ee", "borderWidth": 1.5, "textColor": "#2c6291" }
-  },
+  "title": "サンプル2（1→2→3）",
   "states": [
     {
-      "label": "手続きA",
-      "kind": "手続き",
+      "label": "1",
       "actions": [
-        { "type": "flow", "label": "フロー1", "next": "手続きB" },
-        { "type": "flow", "label": "フロー1", "next": "手続きX" }
+        { "type": "button", "label": "→2", "next": "2" }
       ]
     },
     {
-      "label": "手続きB",
-      "kind": "手続き",
+      "label": "2",
       "actions": [
-        { "type": "flow", "label": "フロー2", "next": "手続きC" }
+        { "type": "button", "label": "→3", "next": "3" }
       ]
     },
-    { "label": "手続きX", "kind": "手続き" },
     {
-      "label": "手続きC",
-      "kind": "手続き",
-      "actions": [
-        { "type": "flow", "label": "フロー3", "next": "手続きD" },
-        { "type": "flow", "label": "フロー4", "next": "手続きX"  },
-        { "type": "flow", "label": "フロー5" },
-        { "type": "flow", "label": "フロー6" },
-        { "type": "flow", "label": "フロー7" }
-      ]
-    },
-    { "label": "手続きD", "kind": "手続き" }
+      "label": "3"
+    }
   ]
 }

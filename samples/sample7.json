@@ -1,0 +1,34 @@
+{
+  "title": "サンプル7（1→2→3→4→5 / 1→4 / 1→5）",
+  "states": [
+    {
+      "label": "1",
+      "actions": [
+        { "type": "button", "label": "→2", "next": "2" },
+        { "type": "button", "label": "→4", "next": "4" },
+        { "type": "button", "label": "→5", "next": "5" }
+      ]
+    },
+    {
+      "label": "2",
+      "actions": [
+        { "type": "button", "label": "→3", "next": "3" }
+      ]
+    },
+    {
+      "label": "3",
+      "actions": [
+        { "type": "button", "label": "→4", "next": "4" }
+      ]
+    },
+    {
+      "label": "4",
+      "actions": [
+        { "type": "button", "label": "→5", "next": "5" }
+      ]
+    },
+    {
+      "label": "5"
+    }
+  ]
+}

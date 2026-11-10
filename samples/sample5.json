@@ -1,0 +1,20 @@
+{
+  "title": "サンプル5（1→3 / 2→3 / 3終わり）",
+  "states": [
+    {
+      "label": "1",
+      "actions": [
+        { "type": "button", "label": "→3", "next": "3" }
+      ]
+    },
+    {
+      "label": "2",
+      "actions": [
+        { "type": "button", "label": "→3", "next": "3" }
+      ]
+    },
+    {
+      "label": "3"
+    }
+  ]
+}

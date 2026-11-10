@@ -324,6 +324,8 @@ public class DiagramService {
             public int y;
             public int width;
             public int height;
+            /** 見出し部分の実際の高さ(名前が折り返される場合に通常より高くなる)。 */
+            public int headerHeight;
             /** 複製箱フラグ。 */
             public boolean clone;
             /** ボタン高さ一覧。 */
@@ -529,11 +531,12 @@ public class DiagramService {
                 box.state = s;
                 box.column = columns[i];
                 box.width = theme.nodeWidth;
+                box.headerHeight = headerHeight(s);
                 List<ActionSpec> boxActions = s.safeActions();
                 for (ActionSpec a : boxActions) {
                     box.actionRowHeights.add(actionRowHeight(a));
                 }
-                box.height = nodeHeight(boxActions, box.actionRowHeights);
+                box.height = nodeHeight(box.headerHeight, boxActions, box.actionRowHeights);
                 placeInColumn(box, nextYByColumn, topY);
                 for (int j = 0; j < boxActions.size(); j++) {
                     box.actionAnchorYs.add(actionAnchorY(box, j));
@@ -574,7 +577,7 @@ public class DiagramService {
                             layout.nodes.add(to);
                             skipsColumns = false;
                         }
-                        int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + theme.headerHeight / 2;
+                        int ty = to.clone ? to.y + CLONE_TEXT_HEIGHT / 2 : to.y + to.headerHeight / 2;
 
                         if (skipsColumns) {
                             // 迂回レーン経由処理
@@ -653,22 +656,38 @@ public class DiagramService {
         }
 
         /** 箱の高さを計算する。ボタンの名前が長くて折り返される場合も考慮し、ボタンごとの実際の高さを積み上げる。 */
-        private int nodeHeight(List<ActionSpec> actions, List<Integer> rowHeights) {
+        private int nodeHeight(int boxHeaderHeight, List<ActionSpec> actions, List<Integer> rowHeights) {
             if (actions.isEmpty()) {
-                return theme.headerHeight;
+                return boxHeaderHeight;
             }
             int sum = 0;
             for (int h : rowHeights) {
                 sum += h;
             }
-            return theme.headerHeight + theme.nodePaddingTop
+            return boxHeaderHeight + theme.nodePaddingTop
                     + sum + theme.actionGap * (actions.size() - 1)
                     + theme.nodePaddingBottom;
         }
 
+        /** 見出し高さ見積もり処理。 */
+        private int headerHeight(StateSpec s) {
+            // state-labelは太字(bold)で実際の文字幅が広がるため、見積もり時に余裕を持たせる
+            int availableWidth = (int) ((theme.nodeWidth - HEADER_LABEL_H_RESERVE) / HEADER_BOLD_SAFETY_FACTOR);
+            if (availableWidth <= 0) {
+                return theme.headerHeight;
+            }
+            int estimatedTextWidth = estimateTextWidthPx(s.label, theme.stateFontSize);
+            int lines = Math.max(1, (int) Math.ceil(estimatedTextWidth / (double) availableWidth));
+            if (lines <= 1) {
+                return theme.headerHeight;
+            }
+            int lineHeight = (int) Math.round(theme.stateFontSize * 1.35);
+            return theme.headerHeight + (lines - 1) * lineHeight + HEADER_WRAP_SAFETY_MARGIN;
+        }
+
         /** 矢印起点y座標計算処理。 */
         public int actionAnchorY(Layout.NodeBox box, int j) {
-            int y = box.y + theme.headerHeight + theme.nodePaddingTop;
+            int y = box.y + box.headerHeight + theme.nodePaddingTop;
             for (int i = 0; i < j; i++) {
                 y += box.actionRowHeights.get(i) + theme.actionGap;
             }
@@ -693,7 +712,7 @@ public class DiagramService {
         private static int estimateTextWidthPx(String text, int fontSizePx) {
             double widthEm = 0;
             for (int i = 0; i < text.length(); i++) {
-                widthEm += isWideChar(text.charAt(i)) ? 1.0 : 0.55;
+                widthEm += isWideChar(text.charAt(i)) ? 1.0 : 0.65;
             }
             return (int) Math.ceil(widthEm * fontSizePx);
         }
@@ -730,7 +749,7 @@ public class DiagramService {
                 }
             }
 
-            boolean[][] isBackEdge = markBackEdges(n, adj, rootsOf(n, adj));
+            boolean[][] isBackEdge = markBackEdges(n, adj);
 
             int[] dagInDegree = new int[n];
             for (int u = 0; u < n; u++) {
@@ -742,13 +761,27 @@ public class DiagramService {
                 }
             }
 
-            // 複数の経路元から合流する場合は、最短路(到達ホップ数が最小)の列に合わせる。
-            // それより後に届く矢印は、合流先の列が自分以下になるため後戻り矢印として扱われる
+            // 複数の経路元から合流する場合、終端(次のアクションが無い)は最短路(到達ホップ数が
+            // 最小)の列に合わせ、続きがある(アクションを持つ)ステータスは最長路(一番後から
+            // 届く経路)の列に合わせる。それ以外の経路は、合流先の列が自分以下になるため
+            // 後戻り矢印として扱われる
+            boolean[] isTerminal = new boolean[n];
+            for (int i = 0; i < n; i++) {
+                isTerminal[i] = states.get(i).safeActions().isEmpty();
+            }
+
             int[] columns = new int[n];
+            for (int i = 0; i < n; i++) {
+                if (isTerminal[i]) {
+                    columns[i] = Integer.MAX_VALUE;
+                }
+            }
+
             boolean[] settled = new boolean[n];
             Deque<Integer> queue = new ArrayDeque<>();
             for (int i = 0; i < n; i++) {
                 if (dagInDegree[i] == 0) {
+                    columns[i] = 0;
                     queue.add(i);
                     settled[i] = true;
                 }
@@ -761,8 +794,9 @@ public class DiagramService {
                         continue;
                     }
                     int v = targets.get(k);
-                    if (!settled[v]) {
-                        columns[v] = columns[u] + 1;
+                    int candidate = columns[u] + 1;
+                    columns[v] = isTerminal[v] ? Math.min(columns[v], candidate) : Math.max(columns[v], candidate);
+                    if (--dagInDegree[v] == 0) {
                         settled[v] = true;
                         queue.add(v);
                     }
@@ -777,39 +811,16 @@ public class DiagramService {
             return columns;
         }
 
-        private List<Integer> rootsOf(int n, List<List<Integer>> adj) {
-            int[] inDegree = new int[n];
-            for (List<Integer> targets : adj) {
-                for (int v : targets) {
-                    inDegree[v]++;
-                }
-            }
-            List<Integer> roots = new ArrayList<>();
-            for (int i = 0; i < n; i++) {
-                if (inDegree[i] == 0) {
-                    roots.add(i);
-                }
-            }
-            if (roots.isEmpty() && n > 0) {
-                roots.add(0);
-            }
-            return roots;
-        }
-
         /** 後戻り矢印検出処理。 */
-        private boolean[][] markBackEdges(int n, List<List<Integer>> adj, List<Integer> roots) {
+        private boolean[][] markBackEdges(int n, List<List<Integer>> adj) {
             boolean[][] isBackEdge = new boolean[n][];
             for (int i = 0; i < n; i++) {
                 isBackEdge[i] = new boolean[adj.get(i).size()];
             }
             int[] color = new int[n]; // 0=未訪問 1=探索中 2=完了
 
-            List<Integer> starts = new ArrayList<>(roots);
-            for (int i = 0; i < n; i++) {
-                starts.add(i); // 未到達ノードも順に起点として拾う
-            }
-
-            for (int start : starts) {
+            // states配列の並び順を優先して起点にする(先頭から順に未訪問ノードを拾う)
+            for (int start = 0; start < n; start++) {
                 if (color[start] != 0) {
                     continue;
                 }
@@ -845,9 +856,16 @@ public class DiagramService {
         public static final int CLONE_TEXT_HEIGHT = 28;
         /** ボタン左右余白長。 */
         private static final int ACTION_LABEL_H_RESERVE = 44;
+        /** 見出しラベル左右余白長。 */
+        private static final int HEADER_LABEL_H_RESERVE = 24;
+        /** 見出しラベルは太字のため、行数見積もり時に幅を広めに見る係数。 */
+        private static final double HEADER_BOLD_SAFETY_FACTOR = 1.15;
+        /** 見出しが複数行になる場合に必ず確保する余白。 */
+        private static final int HEADER_WRAP_SAFETY_MARGIN = 16;
         /** 接続スタブ長。 */
         public static final int ACTION_STUB_LENGTH = 12;
-        private static final int ACTION_LABEL_V_PADDING = 12;
+        /** 折り返しボタンの上下余白(1行ボタンと同じ見た目になる量)。 */
+        private static final int ACTION_LABEL_V_PADDING = 16;
 
         /** 前進矢印経路計算処理。 */
         private void routeForward(Layout.EdgeRoute e, int sx, int sy, int tx, int ty, int lane, int laneCount) {
@@ -1048,6 +1066,7 @@ public class DiagramService {
             StateSpec s = n.state;
             String kindClass = "kind-" + Html.labelToken(s.effectiveKind());
             String badge = s.effectiveKind();
+            List<ActionSpec> actions = s.safeActions();
 
             sb.append("  <div class=\"node ").append(kindClass)
               .append(" lbl-").append(Html.labelToken(s.label))
@@ -1056,12 +1075,17 @@ public class DiagramService {
               .append("px;width:").append(n.width).append("px;height:").append(n.height)
               .append("px\">\n");
 
-            sb.append("    <div class=\"node-header\">")
-              .append("<span class=\"kind-badge\">").append(Html.esc(badge)).append("</span>")
+            if (actions.isEmpty()) {
+                // アクションが無い場合は見出しが箱そのものなので、CSS側のheight:100%に任せる
+                sb.append("    <div class=\"node-header no-actions\">");
+            } else {
+                sb.append("    <div class=\"node-header\" style=\"min-height:")
+                  .append(n.headerHeight).append("px\">");
+            }
+            sb.append("<span class=\"kind-badge\">").append(Html.esc(badge)).append("</span>")
               .append("<span class=\"state-label\">").append(Html.esc(s.label)).append("</span>")
               .append("</div>\n");
 
-            List<ActionSpec> actions = s.safeActions();
             if (!actions.isEmpty()) {
                 sb.append("    <div class=\"node-actions\">\n");
                 for (int j = 0; j < actions.size(); j++) {
@@ -1127,8 +1151,8 @@ public class DiagramService {
         }
 
         private static final String LEGEND_HINT_TEXT =
-                "変更を反映するには審査の流れ画面から再度「審査の流れを確認する」"
-                        + "または「申請の流れを確認する」ボタンを押してください";
+                "変更を反映するには審査の流れ画面から再度「申請フローの流れを図で確認」"
+                        + "または「審査の流れを確認」ボタンを押してください";
         private static final int LEGEND_HINT_OFFSET = 24;
     }
 
@@ -1230,11 +1254,12 @@ public class DiagramService {
                     .fd-canvas .node-header{min-height:var(--header-height);display:flex;\
                     flex-direction:column;justify-content:center;gap:2px;padding:6px 12px;\
                     border-radius:8.5px 8.5px 0 0;}
+                    .fd-canvas .node-header.no-actions{border-radius:8.5px;height:100%;min-height:0;}
                     .fd-canvas .kind-badge{align-self:flex-start;\
                     font-size:var(--badge-font-size);font-weight:700;letter-spacing:.03em;\
                     padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.55);}
                     .fd-canvas .state-label{font-size:var(--state-font-size);font-weight:700;\
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+                    white-space:normal;overflow-wrap:anywhere;line-height:1.35;}
 
                     /* --- アクション --- */
                     .fd-canvas .node-actions{display:flex;flex-direction:column;gap:var(--action-gap);\
@@ -1269,7 +1294,7 @@ public class DiagramService {
                     .fd-canvas .legend .bar{display:inline-block;width:26px;\
                     border-top:var(--edge-w) solid var(--edge-color);}
                     .fd-canvas .legend-hint{position:absolute;font-size:var(--action-font-size);\
-                    color:#718096;font-style:italic;}
+                    color:#718096;font-style:italic;white-space:nowrap;}
                     """);
         }
     }

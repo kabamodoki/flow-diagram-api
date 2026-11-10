@@ -76,6 +76,17 @@ class LayoutEngineTest {
     }
 
     @Test
+    void mergeTakesLongestPathColumnWhenTargetHasFurtherActions() {
+        // cに次のアクション(→d)がある場合は、終端と違い最長路(一番後から届く経路)の列になる
+        Map<String, Layout.NodeBox> n = realNodes(spec(
+                state("a", go("x", "b"), go("z", "c")),
+                state("b", go("y", "c")),
+                state("c", go("w", "d")),
+                state("d")));
+        assertEquals(2, n.get("c").column, "続きがあるcはbから届く長い方の経路の列になる");
+    }
+
+    @Test
     void isolatedNodeIsPlaced() {
         Map<String, Layout.NodeBox> n = realNodes(spec(
                 state("a", go("x", "b")),
