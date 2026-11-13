@@ -1,11 +1,11 @@
 package com.example.flowdiagram.api.service;
 
-import com.example.flowdiagram.api.controller.FlowSpecEntity;
-import com.example.flowdiagram.api.controller.FlowSpecEntity.ActionSpecEntity;
-import com.example.flowdiagram.api.controller.FlowSpecEntity.ActionTypeStyleEntity;
-import com.example.flowdiagram.api.controller.FlowSpecEntity.KindStyleEntity;
-import com.example.flowdiagram.api.controller.FlowSpecEntity.StateSpecEntity;
-import com.example.flowdiagram.api.controller.FlowSpecEntity.ThemeEntity;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.ActionSpecEntity;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.ActionTypeStyleEntity;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.KindStyleEntity;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.StateSpecEntity;
+import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.ThemeEntity;
 import com.example.flowdiagram.model.service.DiagramService;
 import com.example.flowdiagram.model.service.DiagramService.ActionSpec;
 import com.example.flowdiagram.model.service.DiagramService.ActionTypeStyle;
@@ -24,33 +24,33 @@ import java.util.Map;
 
 /** APIサービス。 */
 @Service
-public class DiagramApiService {
+public class FlowDiagramGeneratorService {
 
     private static final String HTML = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8";
 
     private final DiagramService diagramService;
 
-    public DiagramApiService(DiagramService diagramService) {
+    public FlowDiagramGeneratorService(DiagramService diagramService) {
         this.diagramService = diagramService;
     }
 
-    public ResponseEntity<String> diagram(FlowSpecEntity request) {
+    public ResponseEntity<String> diagram(FlowDiagramGeneratorRequest request) {
         String html = diagramService.renderPage(toModel(request));
         return ResponseEntity.ok().header("Content-Type", HTML).body(html);
     }
 
     // --- entity→model変換処理 ---
 
-    private static FlowSpec toModel(FlowSpecEntity e) {
+    private static FlowSpec toModel(FlowDiagramGeneratorRequest e) {
         if (e == null) {
             return new FlowSpec();
         }
         FlowSpec m = new FlowSpec();
-        m.title = e.title;
-        m.theme = toModel(e.theme);
-        m.kinds = toModelKinds(e.kinds);
-        m.types = toModelTypes(e.types);
-        m.states = toModelStates(e.states);
+        m.title = e.getTitle();
+        m.theme = toModel(e.getTheme());
+        m.kinds = toModelKinds(e.getKinds());
+        m.types = toModelTypes(e.getTypes());
+        m.states = toModelStates(e.getStates());
         return m;
     }
 
@@ -59,26 +59,26 @@ public class DiagramApiService {
             return null;
         }
         Theme m = new Theme();
-        m.nodeWidth = e.nodeWidth;
-        m.headerHeight = e.headerHeight;
-        m.actionRowHeight = e.actionRowHeight;
-        m.actionGap = e.actionGap;
-        m.nodePaddingTop = e.nodePaddingTop;
-        m.nodePaddingBottom = e.nodePaddingBottom;
-        m.columnGap = e.columnGap;
-        m.rowGap = e.rowGap;
-        m.canvasPadding = e.canvasPadding;
-        m.fontFamily = e.fontFamily;
-        m.titleFontSize = e.titleFontSize;
-        m.badgeFontSize = e.badgeFontSize;
-        m.stateFontSize = e.stateFontSize;
-        m.actionFontSize = e.actionFontSize;
-        m.background = e.background;
-        m.titleColor = e.titleColor;
-        m.nodeShadow = e.nodeShadow;
-        m.edgeWidth = e.edgeWidth;
-        m.arrowSize = e.arrowSize;
-        m.showLegend = e.showLegend;
+        m.nodeWidth = e.getNodeWidth();
+        m.headerHeight = e.getHeaderHeight();
+        m.actionRowHeight = e.getActionRowHeight();
+        m.actionGap = e.getActionGap();
+        m.nodePaddingTop = e.getNodePaddingTop();
+        m.nodePaddingBottom = e.getNodePaddingBottom();
+        m.columnGap = e.getColumnGap();
+        m.rowGap = e.getRowGap();
+        m.canvasPadding = e.getCanvasPadding();
+        m.fontFamily = e.getFontFamily();
+        m.titleFontSize = e.getTitleFontSize();
+        m.badgeFontSize = e.getBadgeFontSize();
+        m.stateFontSize = e.getStateFontSize();
+        m.actionFontSize = e.getActionFontSize();
+        m.background = e.getBackground();
+        m.titleColor = e.getTitleColor();
+        m.nodeShadow = e.getNodeShadow();
+        m.edgeWidth = e.getEdgeWidth();
+        m.arrowSize = e.getArrowSize();
+        m.showLegend = e.getShowLegend();
         return m;
     }
 
@@ -98,10 +98,10 @@ public class DiagramApiService {
             return null;
         }
         KindStyle m = new KindStyle();
-        m.headerBackground = e.headerBackground;
-        m.background = e.background;
-        m.border = e.border;
-        m.textColor = e.textColor;
+        m.headerBackground = e.getHeaderBackground();
+        m.background = e.getBackground();
+        m.border = e.getBorder();
+        m.textColor = e.getTextColor();
         return m;
     }
 
@@ -121,11 +121,11 @@ public class DiagramApiService {
             return null;
         }
         ActionTypeStyle m = new ActionTypeStyle();
-        m.background = e.background;
-        m.border = e.border;
-        m.borderWidth = e.borderWidth;
-        m.textColor = e.textColor;
-        m.shadow = e.shadow;
+        m.background = e.getBackground();
+        m.border = e.getBorder();
+        m.borderWidth = e.getBorderWidth();
+        m.textColor = e.getTextColor();
+        m.shadow = e.getShadow();
         return m;
     }
 
@@ -144,9 +144,9 @@ public class DiagramApiService {
         if (e == null) {
             return new StateSpec();
         }
-        StateSpec m = new StateSpec(e.label);
-        m.kind = e.kind;
-        m.actions = toModelActions(e.actions);
+        StateSpec m = new StateSpec(e.getLabel());
+        m.kind = e.getKind();
+        m.actions = toModelActions(e.getActions());
         return m;
     }
 
@@ -165,6 +165,6 @@ public class DiagramApiService {
         if (e == null) {
             return new ActionSpec(null, null, (List<String>) null);
         }
-        return new ActionSpec(e.type, e.label, e.next);
+        return new ActionSpec(e.getType(), e.getLabel(), e.getNext());
     }
 }

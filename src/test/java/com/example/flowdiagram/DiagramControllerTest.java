@@ -22,6 +22,8 @@ class DiagramControllerTest {
     private static final String VALID = """
             {
               "title": "テストフロー",
+              "kinds": {},
+              "types": {},
               "states": [
                 { "label": "未開始", "kind": "status",
                   "actions": [ { "type": "button", "label": "開始する", "next": "開始" } ] },
@@ -54,6 +56,9 @@ class DiagramControllerTest {
     void cloneHighlightIsCssOnly() throws Exception {
         String backEdgeJson = """
                 {
+                  "title": "循環テスト",
+                  "kinds": {},
+                  "types": {},
                   "states": [
                     { "label": "A", "actions": [ { "type": "button", "label": "go", "next": "B" } ] },
                     { "label": "B", "actions": [ { "type": "button", "label": "back", "next": "A" } ] }
@@ -84,7 +89,8 @@ class DiagramControllerTest {
         // /error（実サーバーではレスポンスボディにメッセージを含める設定）までは動かないため、
         // ResponseStatusExceptionが設定したエラーメッセージ（status().reason）で検証する
         String json = """
-                { "states": [ { "label": "A", "actions": [ { "label": "go", "next": "zzz" } ] } ] }
+                { "title": "未定義next", "kinds": {}, "types": {},
+                  "states": [ { "label": "A", "actions": [ { "label": "go", "next": "zzz" } ] } ] }
                 """;
         mvc.perform(post("/api/diagram")
                         .contentType(MediaType.APPLICATION_JSON).content(json))
@@ -105,6 +111,9 @@ class DiagramControllerTest {
     void themeLayoutOverrideChangesOutput() throws Exception {
         String json = """
                 {
+                  "title": "テーマ上書きテスト",
+                  "kinds": {},
+                  "types": {},
                   "states": [ { "label": "A" } ],
                   "theme": { "background": "#ff00ff" }
                 }
