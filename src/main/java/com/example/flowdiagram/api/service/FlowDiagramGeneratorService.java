@@ -13,6 +13,7 @@ import com.example.flowdiagram.model.service.DiagramService.FlowSpec;
 import com.example.flowdiagram.model.service.DiagramService.KindStyle;
 import com.example.flowdiagram.model.service.DiagramService.StateSpec;
 import com.example.flowdiagram.model.service.DiagramService.Theme;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -28,11 +29,8 @@ public class FlowDiagramGeneratorService {
 
     private static final String HTML = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8";
 
-    private final DiagramService diagramService;
-
-    public FlowDiagramGeneratorService(DiagramService diagramService) {
-        this.diagramService = diagramService;
-    }
+    @Autowired
+    private DiagramService diagramService;
 
     public ResponseEntity<String> diagram(FlowDiagramGeneratorRequest request) {
         String html = diagramService.renderPage(toModel(request));

@@ -4,6 +4,7 @@ import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.Action
 import com.example.flowdiagram.api.controller.FlowDiagramGeneratorRequest.StateSpecEntity;
 import com.example.flowdiagram.api.service.FlowDiagramGeneratorService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,30 +22,27 @@ public class FlowDiagramGeneratorController {
 
     private static final String HTML = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8";
 
-    private final FlowDiagramGeneratorService service;
-
-    public FlowDiagramGeneratorController(FlowDiagramGeneratorService service) {
-        this.service = service;
-    }
+    @Autowired
+    private FlowDiagramGeneratorService flowDiagramGeneratorService;
 
     @PostMapping(path = "/api/diagram", produces = HTML)
-    public ResponseEntity<String> diagram(@Valid @RequestBody FlowDiagramGeneratorRequest spec) {
-        validateNextReferencesExist(spec);
-        return service.diagram(spec);
+    public ResponseEntity<String> diagram(@Valid @RequestBody FlowDiagramGeneratorRequest request) {
+        validateNextReferencesExist(request);
+        return flowDiagramGeneratorService.diagram(request);
     }
 
     /** next参照チェック処理。 */
-    private void validateNextReferencesExist(FlowDiagramGeneratorRequest spec) {
-        if (spec == null || spec.getStates() == null) {
+    private void validateNextReferencesExist(FlowDiagramGeneratorRequest request) {
+        if (request == null || request.getStates() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "states が指定されていません");
         }
         Set<String> labels = new HashSet<>();
-        for (StateSpecEntity s : spec.getStates()) {
+        for (StateSpecEntity s : request.getStates()) {
             if (s != null && s.getLabel() != null) {
                 labels.add(s.getLabel());
             }
         }
-        for (StateSpecEntity s : spec.getStates()) {
+        for (StateSpecEntity s : request.getStates()) {
             if (s == null || s.getActions() == null) {
                 continue;
             }
